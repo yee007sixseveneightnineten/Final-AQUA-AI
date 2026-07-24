@@ -8,7 +8,7 @@ const CORE_ASSETS = [
   './3d.html',
   './style.css',
   './script.js',
-  './manifest.json',
+  './manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
