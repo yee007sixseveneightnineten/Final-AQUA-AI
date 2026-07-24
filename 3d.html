@@ -1,0 +1,1787 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AQUA AI - 3D Digital Twin</title>
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('aquaTheme');
+        if (saved === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+        // 🔤 อ่านค่าขนาดตัวอักษรที่บันทึกไว้ในเบราว์เซอร์
+        var savedSize = localStorage.getItem('aquaFontSize');
+        if (savedSize) {
+          document.documentElement.setAttribute('data-font-size', savedSize);
+        }
+      } catch (e) { }
+    })();
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1478c9">
+  <style>
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      background-color: #020617;
+      display: flex;
+    }
+
+    /* ================= ฝั่งซ้าย: LINE OA panel (เหมือน index.html ทุกอย่าง) ================= */
+    .tw-left-panel {
+      width: 410px;
+      min-width: 380px;
+      height: 100%;
+      background: #0f172a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px 18px 18px;
+      gap: 14px;
+      overflow-y: auto;
+      box-shadow: 10px 0 30px rgba(0, 0, 0, 0.7);
+      z-index: 10;
+    }
+
+    .tw-back-btn {
+      width: 100%;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f8fafc;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .tw-back-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .tw-title {
+      color: #f8fafc;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .tw-title .fa-cube {
+      color: #38bdf8;
+    }
+
+    /* ================= ปุ่มรีเซ็ต → กลับหน้าหลัก ================= */
+    .standalone-reset-btn {
+      width: 100%;
+      max-width: 360px;
+      height: 46px;
+      background: linear-gradient(135deg, #0284c7, #0d9488);
+      color: #ffffff;
+      border: none;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .standalone-reset-btn:hover {
+      background: linear-gradient(135deg, #0369a1, #0f766e);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(2, 132, 199, 0.5);
+    }
+
+    /* ================= ฝั่งขวา: 3D Scene ================= */
+    .tw-right-panel {
+      flex: 1;
+      height: 100%;
+      position: relative;
+      background: #000;
+    }
+
+    #webgl-container {
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+
+    #webgl-container:active {
+      cursor: grabbing;
+    }
+
+    .overlay-hint {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      color: #f8fafc;
+      padding: 14px 18px;
+      border-radius: 16px;
+      font-size: 12px;
+      pointer-events: none;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      min-width: 190px;
+    }
+
+    .overlay-title {
+      font-weight: 700;
+      color: #38bdf8;
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .overlay-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .overlay-row .name {
+      color: #cbd5e1;
+      font-size: 11px;
+    }
+
+    .overlay-row .val {
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .overlay-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+
+    /* Floating Label แบบพรีเมี่ยม */
+    .plot-label {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(12px);
+      border: 1.5px solid rgba(56, 189, 248, 0.4);
+      color: #f8fafc;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      white-space: nowrap;
+      pointer-events: none;
+      text-align: left;
+      line-height: 1.4;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(56, 189, 248, 0.3) inset;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      min-width: 170px;
+    }
+
+    .plot-label:hover {
+      transform: translate(-50%, -105%) scale(1.03);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+    }
+
+    .plot-label .plot-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .plot-label .plot-name {
+      font-size: 13px;
+      color: #e0f2fe;
+    }
+
+    .plot-label .moisture-bar {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 4px 0;
+    }
+
+    .plot-label .moisture-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #38bdf8, #67e8f9);
+      transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .plot-label .pump-status {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .plot-label .pump-on {
+      background: rgba(56, 189, 248, 0.25);
+      color: #67e8f9;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        flex-direction: column;
+      }
+
+      .tw-left-panel {
+        width: 100%;
+        min-width: 0;
+        height: 46%;
+      }
+
+      .tw-right-panel {
+        height: 54%;
+      }
+    }
+  </style>
+</head>
+
+<body class="font-sans">
+
+  <div id="urgentToastContainer"></div>
+
+  <div id="threeLoadingScreen"
+    class="fixed inset-0 bg-[#020617] flex items-center justify-center z-[9999] transition-opacity duration-700">
+    <div class="text-center">
+      <div class="w-16 h-16 mx-auto mb-6 border-4 border-[#38bdf8] border-t-transparent rounded-full animate-spin">
+      </div>
+      <div class="text-white text-xl font-bold mb-2">กำลังโหลด 3D Digital Twin</div>
+      <div class="text-[#94a3b8] text-sm mb-6">สร้างฟาร์มเสมือนจริง • โหลด geometry และ texture</div>
+
+      <div class="w-80 h-1.5 bg-[#1e2937] rounded-full mx-auto overflow-hidden">
+        <div id="loadingProgress"
+          class="h-full w-0 bg-gradient-to-r from-[#38bdf8] to-[#67e8f9] transition-all duration-300"></div>
+      </div>
+      <div id="loadingText" class="text-[11px] text-[#64748b] mt-3">เตรียมฉากฟาร์ม...</div>
+    </div>
+  </div>
+
+  <div class="tw-left-panel">
+
+    <div class="tw-title"><i class="fa-solid fa-cube"></i> AQUA AI · 3D Digital Twin</div>
+
+    <div class="flex gap-2 max-w-[360px] mx-auto w-full flex-shrink-0">
+      <button id="chip-plot1" onclick="switchContact('plot1')"
+        class="contact-chip flex-1 aqua-card rounded-xl px-2 py-2 text-center">
+        <div
+          class="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold mb-1">
+          ลส</div>
+        <div class="text-[10px] font-medium text-[var(--ink)]">ลุงสมชาย</div>
+      </button>
+      <button id="chip-plot2" onclick="switchContact('plot2')"
+        class="contact-chip flex-1 aqua-card rounded-xl px-2 py-2 text-center">
+        <div
+          class="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-cyan-400 to-sky-600 flex items-center justify-center text-white text-xs font-bold mb-1">
+          นศ</div>
+        <div class="text-[10px] font-medium text-[var(--ink)]">น้าสมศรี</div>
+      </button>
+      <button id="chip-plot3" onclick="switchContact('plot3')"
+        class="contact-chip flex-1 aqua-card rounded-xl px-2 py-2 text-center">
+        <div
+          class="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-xs font-bold mb-1">
+          ผด</div>
+        <div class="text-[10px] font-medium text-[var(--ink)]">ผู้ใหญ่ผู้ดี</div>
+      </button>
+    </div>
+
+    <div
+      class="phone-frame w-full max-w-[360px] mx-auto overflow-hidden flex flex-col h-[560px] relative flex-shrink-0">
+      <div class="phone-notch-bar absolute top-0 inset-x-0 h-4 flex justify-center items-center z-20">
+        <div class="w-24 h-3 rounded-b-xl" style="background: var(--phone-bg);"></div>
+      </div>
+
+      <div class="line-header pt-6 pb-3 px-4 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-chevron-left text-sm text-[var(--ink-faint)]"></i>
+          <div
+            class="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center font-bold text-xs text-white shadow">
+            <i class="fa-solid fa-droplet"></i>
+          </div>
+          <div>
+            <div id="chatHeaderName" class="text-xs font-bold flex items-center text-[var(--ink)]">AQUA AI <i
+                class="fa-solid fa-circle-check text-emerald-500 text-[10px] ml-1"></i></div>
+            <div id="chatHeaderSub" class="text-[9px] text-emerald-600">● ปกติ</div>
+          </div>
+        </div>
+        <div class="flex items-center space-x-3 text-sm text-[var(--ink-faint)] relative">
+          <i class="fa-solid fa-magnifying-glass"></i>
+
+          <button onclick="toggleFontSizeDropdown(event)" title="ปรับขนาดตัวอักษร"
+            class="hover:text-[var(--aqua-blue)] transition-colors focus:outline-none">
+            <i class="fa-solid fa-bars cursor-pointer"></i>
+          </button>
+
+          <div id="fontSizeDropdown" class="font-size-dropdown hidden" onclick="event.stopPropagation()">
+            <div class="font-size-header">
+              <i class="fa-solid fa-text-height mr-1.5 text-[var(--aqua-blue)]"></i> ขนาดตัวอักษร
+            </div>
+            <div class="font-size-options">
+              <button onclick="setFontSize('small')" class="font-size-btn" data-size="small">เล็ก (85%)</button>
+              <button onclick="setFontSize('normal')" class="font-size-btn active" data-size="normal">ปกติ
+                (100%)</button>
+              <button onclick="setFontSize('large')" class="font-size-btn" data-size="large">ใหญ่ (115%)</button>
+              <button onclick="setFontSize('xlarge')" class="font-size-btn" data-size="xlarge">ใหญ่มาก (130%)</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-body-bg flex-1 p-3 overflow-y-auto space-y-3 text-xs" id="lineChatContainer"></div>
+
+      <div class="line-quickmenu p-2 grid grid-cols-3 gap-1">
+        <button onclick="simulateLineAction('moisture')"
+          class="line-quickmenu-btn active:scale-95 p-2.5 rounded-lg flex flex-col items-center justify-center text-center">
+          <i class="fa-solid fa-droplet text-sky-500 mb-1 text-base"></i>
+          <span class="text-[10px] font-medium">ตรวจความชื้นดิน</span>
+        </button>
+        <button onclick="simulateLineAction('irrigation')"
+          class="line-quickmenu-btn active:scale-95 p-2.5 rounded-lg flex flex-col items-center justify-center text-center">
+          <i class="fa-solid fa-robot text-cyan-600 mb-1 text-base"></i>
+          <span class="text-[10px] font-medium">AI แนะนำการให้น้ำ</span>
+        </button>
+        <button onclick="simulateLineAction('toggle_pump')"
+          class="line-quickmenu-btn pump-btn active:scale-95 p-2.5 rounded-lg flex flex-col items-center justify-center text-center">
+          <i class="fa-solid fa-power-off mb-1 text-base" id="linePumpIcon"></i>
+          <span class="text-[10px] font-bold" id="linePumpText">สั่งเปิด/ปิดปั๊ม</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="aqua-card rounded-xl p-4 max-w-[360px] mx-auto w-full flex-shrink-0">
+      <h3 class="card-heading flex items-center gap-2 mb-3"><i
+          class="fa-solid fa-traffic-light text-[var(--aqua-blue)]"></i> ระบบไฟจราจรสำหรับเกษตรกร</h3>
+      <div class="space-y-2">
+        <div class="traffic-row traffic-green"><span class="traffic-dot"></span>
+          <div>
+            <div>เขียว</div>
+            <div class="traffic-sub">หยุดให้น้ำ</div>
+          </div>
+        </div>
+        <div class="traffic-row traffic-yellow"><span class="traffic-dot"></span>
+          <div>
+            <div>เหลือง</div>
+            <div class="traffic-sub">เฝ้าระวัง</div>
+          </div>
+        </div>
+        <div class="traffic-row traffic-red"><span class="traffic-dot"></span>
+          <div>
+            <div>แดง</div>
+            <div class="traffic-sub">พร้อมให้น้ำ</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button class="standalone-reset-btn" onclick="window.location.href='index.html'">
+      <i class="fa-solid fa-arrow-left"></i>
+      กลับหน้าหลัก Dashboard
+    </button>
+  </div>
+
+  <div class="tw-right-panel">
+    <div class="overlay-hint" id="overlayHint">
+      <div class="overlay-title">3D Smart Farm — 3 แปลง</div>
+      <div class="overlay-time" id="hudTime">--:--:--</div>
+      <div class="overlay-date" id="hudDate">--</div>
+
+      <div class="overlay-row"
+        style="margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.15);">
+        <span class="name"><i class="fa-solid fa-cloud-sun text-amber-400" id="weatherIcon3D"></i> พยากรณ์อากาศ</span>
+        <span class="val" id="weatherValue3D" style="color: #f59e0b;">กำลังโหลด...</span>
+      </div>
+
+      <div class="overlay-row"><span class="name"><span class="overlay-dot" style="background:#38bdf8;"></span>Plot-001
+          ลุงสมชาย</span><span class="val" id="hudPlot1">–</span></div>
+      <div class="overlay-row"><span class="name"><span class="overlay-dot" style="background:#22d3ee;"></span>Plot-002
+          น้าสมศรี</span><span class="val" id="hudPlot2">–</span></div>
+      <div class="overlay-row"><span class="name"><span class="overlay-dot" style="background:#818cf8;"></span>Plot-003
+          ผู้ใหญ่ผู้ดี</span><span class="val" id="hudPlot3">–</span></div>
+    </div>
+
+    <div id="webgl-container"></div>
+    <div class="plot-label" id="label-plot1"></div>
+    <div class="plot-label" id="label-plot2"></div>
+    <div class="plot-label" id="label-plot3"></div>
+  </div>
+
+  <script src="script.js"></script>
+
+  <script>
+    let scene, camera, renderer, controls;
+    let farmObjects = [], sprinklerHeads = [], waterParticleSystems = [], waterJets = [], solarPanels = [], valveActuators = [];
+    let ambientLight, hemiLight, sunLight;
+
+    // color
+    const colorDryLeaf = new THREE.Color(0x78350f);
+    const colorMidLeaf = new THREE.Color(0x84cc16);
+    const colorFreshLeaf = new THREE.Color(0x064e3b); // เดิม 0x15803d -> ปรับเข้มลึกขึ้น
+
+    // ต้นอ้อย (ปรับ FreshCane ให้เป็นสีเขียวแก่สมบูรณ์ก่อนเก็บเกี่ยว)
+    const colorDryCane = new THREE.Color(0x8a7a3a);
+    const colorMidCane = new THREE.Color(0x9ac93a);
+    const colorFreshCane = new THREE.Color(0x3f6212); // เดิม 0x65a30d -> ปรับเป็นเขียวแก่เข้มข้น
+
+    // 🌾 [ปรับแก้] โทนสีต้นข้าว (เปลี่ยนสีโตเต็มที่ให้เป็นเขียวขจีสดชื่น)
+    const colorDryRice = new THREE.Color(0xa16207);   // สีตอนแห้งขอด (ส้มอมน้ำตาล)
+    const colorMidRice = new THREE.Color(0x84cc16);   // สีช่วงเริ่มโต (เขียวตองอ่อน)
+    const colorFreshRice = new THREE.Color(0x15803d);  // 🌿 สีเมื่อชื้น 100% (เขียวนาข้าวขจีสมบูรณ์)
+
+    function sampleGrowthRamp(out, dry, mid, lush, progress) {
+      if (progress <= 0.5) {
+        out.copy(dry).lerp(mid, progress / 0.5);
+      } else {
+        out.copy(mid).lerp(lush, (progress - 0.5) / 0.5);
+      }
+      return out;
+    }
+
+    const ZONES = [
+      { plotId: 'plot1', x: -17, crop: 'sugarcane', dotColor: '#38bdf8' },
+      { plotId: 'plot2', x: 0, crop: 'sugarcane', dotColor: '#22d3ee' },
+      { plotId: 'plot3', x: 17, crop: 'rice', dotColor: '#818cf8' }
+    ];
+    const BED_HALF_X = 6.2;
+    const BED_HALF_Z = 15.5;
+
+    function createSunsetSun(position) {
+      const sunGroup = new THREE.Group();
+      sunGroup.position.copy(position);
+
+      const sunCore = new THREE.Mesh(new THREE.SphereGeometry(6.0, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffedd5 }));
+      const sunGlow1 = new THREE.Mesh(new THREE.SphereGeometry(10.5, 32, 32), new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.75, side: THREE.BackSide }));
+      const sunGlow2 = new THREE.Mesh(new THREE.SphereGeometry(16.0, 32, 32), new THREE.MeshBasicMaterial({ color: 0xea580c, transparent: true, opacity: 0.35, side: THREE.BackSide }));
+
+      sunGroup.add(sunCore, sunGlow1, sunGlow2);
+      scene.add(sunGroup);
+    }
+
+    function createGround() {
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.9, metalness: 0.02 }));
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      const dustGeo = new THREE.PlaneGeometry(90, 90);
+      const dustMat = new THREE.MeshBasicMaterial({
+        color: 0xf5e8c7, transparent: true, opacity: 0.12, side: THREE.DoubleSide, blending: THREE.AdditiveBlending
+      });
+      const dust = new THREE.Mesh(dustGeo, dustMat);
+      dust.rotation.x = -Math.PI / 2;
+      dust.position.y = 0.02;
+      scene.add(dust);
+
+      const grassBladeMat = new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.8 });
+      for (let i = 0; i < 260; i++) {
+        const blade = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.5, 3), grassBladeMat);
+        const rx = (Math.random() - 0.5) * 80;
+        const rz = (Math.random() - 0.5) * 80;
+        if (ZONES.every(z => Math.abs(rx - z.x) > BED_HALF_X + 1.5) || Math.abs(rz) > BED_HALF_Z + 1.5) {
+          blade.position.set(rx, 0.25, rz);
+          blade.rotation.y = Math.random() * Math.PI;
+          blade.castShadow = true;
+          scene.add(blade);
+        }
+      }
+
+      const pathMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.5, metalness: 0.1 });
+      const pathXs = [-25.5, -8.5, 8.5, 25.5];
+      pathXs.forEach(px => {
+        const path = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.03, BED_HALF_Z * 2 + 2), pathMat);
+        path.position.set(px, 0.015, 0);
+        path.receiveShadow = true;
+        scene.add(path);
+      });
+    }
+
+    // ==================== 🐄 🐔 🐕 ระบบสัตว์เลี้ยงในฟาร์ม (Farm Animals) ====================
+    let farmAnimals = [];
+
+    // 1. โมเดลวัว (Cow)
+    function createCow(x, z) {
+      const cowGroup = new THREE.Group();
+      cowGroup.position.set(x, 0, z);
+
+      // 🎨 เพิ่มจานสีสำหรับวัว (สุ่มลายและสี)
+      const cowPalettes = [
+        { body: 0x78350f, spot: 0x0f172a }, // น้ำตาล - ลายดำ
+        { body: 0xd97706, spot: 0x451a03 }, // ส้มทอง - ลายน้ำตาลเข้ม
+        { body: 0x1e293b, spot: 0x78350f }, // ดำ - ลายน้ำตาล
+        { body: 0x9a3412, spot: 0x1e293b }  // น้ำตาลส้ม - ลายดำ
+      ];
+
+      const palette = cowPalettes[Math.floor(Math.random() * cowPalettes.length)];
+
+      const whiteMat = new THREE.MeshStandardMaterial({ color: palette.body, roughness: 0.8 });
+      const blackMat = new THREE.MeshStandardMaterial({ color: palette.spot, roughness: 0.8 });
+      const pinkMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.6 });
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 });
+
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 1.4), whiteMat);
+      body.position.y = 0.65;
+      body.castShadow = true;
+      cowGroup.add(body);
+
+      const spot1 = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.4, 0.5), blackMat);
+      spot1.position.set(0, 0.68, 0.1);
+      cowGroup.add(spot1);
+
+      const headGroup = new THREE.Group();
+      headGroup.position.set(0, 0.95, 0.75);
+
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.42, 0.48), whiteMat);
+      head.castShadow = true;
+      headGroup.add(head);
+
+      const snout = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.22, 0.22), pinkMat);
+      snout.position.set(0, -0.08, 0.24);
+      headGroup.add(snout);
+
+      const hornMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0 });
+      const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.18, 4), hornMat);
+      hornL.position.set(0.18, 0.24, -0.08);
+      hornL.rotation.z = -0.2;
+      const hornR = hornL.clone();
+      hornR.position.x = -0.18;
+      hornR.rotation.z = 0.2;
+      headGroup.add(hornL, hornR);
+
+      cowGroup.add(headGroup);
+
+      const legs = [];
+      [{ x: 0.3, z: 0.45 }, { x: -0.3, z: 0.45 }, { x: 0.3, z: -0.45 }, { x: -0.3, z: -0.45 }].forEach((pos) => {
+        const legPivot = new THREE.Group();
+        legPivot.position.set(pos.x, 0.5, pos.z);
+        const legMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.5), legMat);
+        legMesh.position.y = -0.25;
+        legMesh.castShadow = true;
+        legPivot.add(legMesh);
+        cowGroup.add(legPivot);
+        legs.push(legPivot);
+      });
+
+      scene.add(cowGroup);
+
+      return {
+        type: 'cow',
+        group: cowGroup,
+        legs: legs,
+        head: headGroup,
+        targetX: x + (Math.random() - 0.5) * 20,
+        targetZ: z + (Math.random() - 0.5) * 20,
+        speed: 0.015 + Math.random() * 0.008,
+        animOffset: Math.random() * Math.PI * 2
+      };
+    }
+
+    // 2. โมเดลไก่ 🐔 (Chicken)
+    function createChicken(x, z) {
+      const chickenGroup = new THREE.Group();
+      chickenGroup.position.set(x, 0, z);
+
+      const chickenColors = [
+        0xfff7ed, // ขาวครีม
+        0xd97706, // น้ำตาลทอง
+        0x1e293b, // ดำ
+        0xb45309  // น้ำตาลเข้ม
+      ];
+      const randomFeatherColor = chickenColors[Math.floor(Math.random() * chickenColors.length)];
+
+      const featherMat = new THREE.MeshStandardMaterial({ color: randomFeatherColor, roughness: 0.8 });
+      const redMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 });
+      const yellowMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.6 });
+
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.28, 0.38), featherMat);
+      body.position.y = 0.28;
+      body.castShadow = true;
+      chickenGroup.add(body);
+
+      const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.18, 0.24), featherMat);
+      wingL.position.set(0.16, 0.3, 0);
+      const wingR = wingL.clone();
+      wingR.position.x = -0.16;
+      chickenGroup.add(wingL, wingR);
+
+      const headGroup = new THREE.Group();
+      headGroup.position.set(0, 0.42, 0.16);
+
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.2, 0.18), featherMat);
+      head.castShadow = true;
+      headGroup.add(head);
+
+      const comb = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.16), redMat);
+      comb.position.set(0, 0.13, 0);
+      headGroup.add(comb);
+
+      const beak = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.1, 4), yellowMat);
+      beak.rotation.x = Math.PI / 2;
+      beak.position.set(0, -0.02, 0.13);
+      headGroup.add(beak);
+
+      chickenGroup.add(headGroup);
+
+      const tail = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 4), featherMat);
+      tail.rotation.x = -Math.PI / 3;
+      tail.position.set(0, 0.35, -0.2);
+      chickenGroup.add(tail);
+
+      const legs = [];
+      [-0.07, 0.07].forEach(lx => {
+        const legPivot = new THREE.Group();
+        legPivot.position.set(lx, 0.16, 0);
+        const legMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.16), yellowMat);
+        legMesh.position.y = -0.08;
+        legMesh.castShadow = true;
+        legPivot.add(legMesh);
+        chickenGroup.add(legPivot);
+        legs.push(legPivot);
+      });
+
+      scene.add(chickenGroup);
+
+      return {
+        type: 'chicken',
+        group: chickenGroup,
+        legs: legs,
+        head: headGroup,
+        wings: [wingL, wingR],
+        targetX: x + (Math.random() - 0.5) * 20,
+        targetZ: z + (Math.random() - 0.5) * 20,
+        speed: 0.028 + Math.random() * 0.012,
+        animOffset: Math.random() * Math.PI * 2
+      };
+    }
+
+    // 3. โมเดลหมา 🐕 (Dog)
+    function createDog(x, z) {
+      const dogGroup = new THREE.Group();
+      dogGroup.position.set(x, 0, z);
+      // 🎨 จานสีขนหมา
+      const dogColors = [
+        0xd97706, // ส้มทอง
+        0x1e293b, // ดำ
+        0x64748b, // เทาฮัสกี้
+        0x78350f  // น้ำตาลเข้ม
+      ];
+      const randomFurColor = dogColors[Math.floor(Math.random() * dogColors.length)];
+
+      const furMat = new THREE.MeshStandardMaterial({ color: randomFurColor, roughness: 0.7 });
+      const darkMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+      const whiteMat = new THREE.MeshStandardMaterial({ color: 0xfff7ed, roughness: 0.8 });
+
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.42, 0.8), furMat);
+      body.position.y = 0.42;
+      body.castShadow = true;
+      dogGroup.add(body);
+
+      const chest = new THREE.Mesh(new THREE.BoxGeometry(0.43, 0.28, 0.32), whiteMat);
+      chest.position.set(0, 0.38, 0.22);
+      dogGroup.add(chest);
+
+      const headGroup = new THREE.Group();
+      headGroup.position.set(0, 0.62, 0.42);
+
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.3, 0.32), furMat);
+      head.castShadow = true;
+      headGroup.add(head);
+
+      const snout = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 0.18), whiteMat);
+      snout.position.set(0, -0.05, 0.2);
+      headGroup.add(snout);
+
+      const nose = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.05, 0.05), darkMat);
+      nose.position.set(0, 0, 0.28);
+      headGroup.add(nose);
+
+      const earL = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.16, 4), furMat);
+      earL.position.set(0.12, 0.2, -0.04);
+      earL.rotation.z = -0.2;
+      const earR = earL.clone();
+      earR.position.x = -0.12;
+      earR.rotation.z = 0.2;
+      headGroup.add(earL, earR);
+
+      dogGroup.add(headGroup);
+
+      const tailPivot = new THREE.Group();
+      tailPivot.position.set(0, 0.52, -0.38);
+      const tailMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.02, 0.32), furMat);
+      tailMesh.position.set(0, 0.12, -0.08);
+      tailMesh.rotation.x = -Math.PI / 4;
+      tailMesh.castShadow = true;
+      tailPivot.add(tailMesh);
+      dogGroup.add(tailPivot);
+
+      const legs = [];
+      [{ x: 0.16, z: 0.26 }, { x: -0.16, z: 0.26 }, { x: 0.16, z: -0.26 }, { x: -0.16, z: -0.26 }].forEach(p => {
+        const legPivot = new THREE.Group();
+        legPivot.position.set(p.x, 0.32, p.z);
+        const legMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.04, 0.32), furMat);
+        legMesh.position.y = -0.16;
+        legMesh.castShadow = true;
+        legPivot.add(legMesh);
+        dogGroup.add(legPivot);
+        legs.push(legPivot);
+      });
+
+      scene.add(dogGroup);
+
+      return {
+        type: 'dog',
+        group: dogGroup,
+        legs: legs,
+        head: headGroup,
+        tail: tailPivot,
+        targetX: x + (Math.random() - 0.5) * 20,
+        targetZ: z + (Math.random() - 0.5) * 20,
+        speed: 0.068 + Math.random() * 0.025,
+        animOffset: Math.random() * Math.PI * 2
+      };
+    }
+
+    // สร้างฝูงสัตว์ผสมผสาน
+    function createFarmAnimals() {
+      farmAnimals = []; // ล้างค่า array
+
+      // 1. วัว 2 ตัว
+      [{ x: -25, z: 10 }, { x: 22, z: -10 }].forEach(pt => farmAnimals.push(createCow(pt.x, pt.z)));
+
+      // 2. ไก่ 4 ตัว
+      [{ x: -10, z: 15 }, { x: -8, z: 18 }, { x: 12, z: -18 }, { x: 15, z: -15 }].forEach(pt => farmAnimals.push(createChicken(pt.x, pt.z)));
+
+      // 3. หมา 2 ตัว
+      [{ x: -18, z: -12 }, { x: 18, z: 15 }].forEach(pt => farmAnimals.push(createDog(pt.x, pt.z)));
+    }
+
+    // อัปเดตการขยับและเคลื่อนที่ของสัตว์
+    function updateFarmAnimals() {
+      const showAnimals = localStorage.getItem('aquaShowAnimals') === 'true'; // 👈 เปลี่ยนเงื่อนไขเป็น === 'true'
+      farmAnimals.forEach(animal => {
+        if (animal.group) animal.group.visible = showAnimals;
+      });
+      if (!showAnimals) return;
+
+      const time = performance.now() * 0.006;
+
+      farmAnimals.forEach(animal => {
+        const dx = animal.targetX - animal.group.position.x;
+        const dz = animal.targetZ - animal.group.position.z;
+        const dist = Math.hypot(dx, dz);
+
+        if (dist < 0.6) {
+          animal.targetX = (Math.random() - 0.5) * 65;
+          animal.targetZ = (Math.random() - 0.5) * 45;
+        } else {
+          const angle = Math.atan2(dx, dz);
+          animal.group.rotation.y = angle;
+
+          animal.group.position.x += (dx / dist) * animal.speed;
+          animal.group.position.z += (dz / dist) * animal.speed;
+
+          if (animal.type === 'dog') {
+            const dogSpeed = time * 2.4;
+            animal.legs.forEach((leg, idx) => {
+              leg.rotation.x = Math.sin(dogSpeed + animal.animOffset + (idx % 2 === 0 ? 0 : Math.PI)) * 0.55;
+            });
+            if (animal.tail) animal.tail.rotation.y = Math.sin(time * 3.5) * 0.5;
+            if (animal.head) animal.head.rotation.x = Math.sin(time * 2) * 0.08;
+          } else if (animal.type === 'chicken') {
+            const chickSpeed = time * 1.6;
+            animal.legs.forEach((leg, idx) => {
+              leg.rotation.x = Math.sin(chickSpeed + animal.animOffset + (idx === 0 ? 0 : Math.PI)) * 0.45;
+            });
+            if (animal.head) animal.head.position.z = 0.16 + Math.sin(time * 2.8) * 0.05;
+            if (animal.wings) {
+              const flap = Math.sin(time * 2) * 0.12;
+              animal.wings[0].rotation.z = flap;
+              animal.wings[1].rotation.z = -flap;
+            }
+          } else {
+            animal.legs.forEach((leg, idx) => {
+              leg.rotation.x = Math.sin(time + animal.animOffset + (idx % 2 === 0 ? 0 : Math.PI)) * 0.35;
+            });
+            if (animal.head) animal.head.rotation.x = Math.sin(time * 1.5) * 0.04;
+          }
+        }
+      });
+    }
+
+    function createSurroundingTrees() {
+      const treeCount = 56;
+      for (let i = 0; i < treeCount; i++) {
+        const angle = (i / treeCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.2;
+        const radius = 38 + Math.random() * 15;
+        createSingleBigTree(Math.cos(angle) * radius, Math.sin(angle) * radius);
+      }
+    }
+
+    function createSingleBigTree(x, z) {
+      const treeGroup = new THREE.Group();
+      treeGroup.position.set(x, 0, z);
+      const scaleVar = 0.8 + Math.random() * 0.5;
+      treeGroup.scale.set(scaleVar, scaleVar + (Math.random() * 0.3), scaleVar);
+
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.55, 3.2, 6), new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.9 }));
+      trunk.position.y = 1.6;
+      trunk.castShadow = true;
+      treeGroup.add(trunk);
+
+      const canopy = new THREE.Mesh(new THREE.DodecahedronGeometry(2.4, 1), new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.7, flatShading: true }));
+      canopy.position.y = 4.2;
+      canopy.castShadow = true;
+      treeGroup.add(canopy);
+
+      scene.add(treeGroup);
+    }
+
+    function createPlotZone(zone) {
+      const woodFrameMat = new THREE.MeshStandardMaterial({ color: 0x542609, roughness: 0.6 });
+      const soilMat = new THREE.MeshStandardMaterial({ color: 0x1c1006, roughness: 0.95 });
+
+      const bedGroup = new THREE.Group();
+      bedGroup.position.set(zone.x, 0, 0);
+
+      const w = BED_HALF_X * 2, d = BED_HALF_Z * 2;
+      const side1 = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.5, 0.3), woodFrameMat);
+      side1.position.set(0, 0.25, BED_HALF_Z + 0.15); side1.castShadow = true; side1.receiveShadow = true;
+      const side2 = side1.clone(); side2.position.set(0, 0.25, -BED_HALF_Z - 0.15);
+      const side3 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.5, d + 0.4), woodFrameMat);
+      side3.position.set(BED_HALF_X + 0.15, 0.25, 0); side3.castShadow = true; side3.receiveShadow = true;
+      const side4 = side3.clone(); side4.position.set(-BED_HALF_X - 0.15, 0.25, 0);
+      bedGroup.add(side1, side2, side3, side4);
+
+      const soil = new THREE.Mesh(new THREE.BoxGeometry(w, 0.45, d), soilMat);
+      soil.position.y = 0.2;
+      soil.receiveShadow = true;
+      bedGroup.add(soil);
+
+      scene.add(bedGroup);
+
+      createSprinklerLine(zone);
+      createSolarPanelArray(zone.x, BED_HALF_Z + 4.5, zone.plotId);
+      createGrowthSparkles(zone);
+      // 🌾 [Optimize] ปรับเป็น 8 x 16 (128 กอ) แน่นกำลังสวยและลื่นไหล
+      const cols = zone.crop === 'rice' ? 8 : 5;
+      const rows = zone.crop === 'rice' ? 16 : 12;
+
+      for (let c = 0; c < cols; c++) {
+        for (let r = 0; r < rows; r++) {
+          const px = zone.x + (-BED_HALF_X + 1.0) + c * ((w - 2.0) / (cols - 1));
+          const pz = (-BED_HALF_Z + 1.2) + r * ((d - 2.4) / (rows - 1));
+          if (zone.crop === 'rice') {
+            createDenseRicePlant(px, 0.42, pz, zone.plotId);
+          } else {
+            createSugarcanePlant(px, 0.42, pz, zone.plotId);
+          }
+        }
+      }
+    }
+
+    function createAutomatedValve(x, z) {
+      const steelMat = new THREE.MeshStandardMaterial({ color: 0xd6dde6, metalness: 0.95, roughness: 0.12 });
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.22 });
+      const actuatorMat = new THREE.MeshStandardMaterial({
+        color: 0x0284c7,
+        metalness: 0.3,
+        roughness: 0.35,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.15
+      });
+
+      const group = new THREE.Group();
+      group.position.set(x, 0.22, z);
+
+      const pipeSeg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.9, 12), steelMat);
+      pipeSeg.rotation.x = Math.PI / 2;
+      pipeSeg.castShadow = true;
+      group.add(pipeSeg);
+
+      [-0.2, 0.2].forEach(fz => {
+        const flange = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.05, 14), steelMat);
+        flange.rotation.x = Math.PI / 2;
+        flange.position.set(0, 0, fz);
+        flange.castShadow = true;
+        group.add(flange);
+      });
+
+      const valveBody = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 14), bodyMat);
+      valveBody.castShadow = true;
+      group.add(valveBody);
+
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.16, 8), steelMat);
+      stem.position.set(0, 0.2, 0);
+      group.add(stem);
+
+      const actuator = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.3, 0.3), actuatorMat);
+      actuator.position.set(0, 0.42, 0);
+      actuator.castShadow = true;
+      group.add(actuator);
+
+      const led = new THREE.Mesh(new THREE.CircleGeometry(0.035, 12), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      led.position.set(0, 0.42, 0.151);
+      group.add(led);
+
+      scene.add(group);
+      return actuatorMat;
+    }
+
+    function update3DTime() {
+      const timeEl = document.getElementById('hudTime');
+      const dateEl = document.getElementById('hudDate');
+      if (!timeEl || !dateEl) return;
+      const now = new Date();
+      const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      timeEl.innerText = `${hours}:${minutes}:${seconds}`;
+      dateEl.innerText = `${now.getDate()} ${thaiMonths[now.getMonth()]} ${now.getFullYear() + 543}`;
+    }
+
+    function update3DLighting() {
+      if (!sunLight) return;
+
+      sunLight.color.setHex(0xfff8e7);
+      sunLight.intensity = 3.2; // ปรับความสว่างแสงอาทิตย์ให้พอดี
+      sunLight.position.set(50, 35, -42);
+
+      if (ambientLight) ambientLight.intensity = 0.75; // ลดแสงบรรยากาศลงเล็กน้อยเพื่อให้เงาลึกและชัดขึ้น
+      if (hemiLight) hemiLight.intensity = 0.55;
+
+      scene.background = new THREE.Color(0x7dd3fc);
+      scene.fog = new THREE.FogExp2(0xbae6fd, 0.0015);
+    }
+
+    function createSprinklerLine(zone) {
+      const metalMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9, roughness: 0.1 });
+      const emitters = [-BED_HALF_Z * 0.6, 0, BED_HALF_Z * 0.6];
+
+      emitters.forEach(ez => {
+        const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.2), metalMat);
+        pipe.position.set(zone.x, 0.6, ez);
+        pipe.castShadow = true;
+
+        const head = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.09, 0.25), metalMat);
+        head.position.set(zone.x, 1.2, ez);
+        head.castShadow = true;
+
+        scene.add(pipe, head);
+        sprinklerHeads.push({ mesh: head, plotId: zone.plotId });
+
+        const actuatorMat = createAutomatedValve(zone.x - 0.55, ez);
+        valveActuators.push({ mat: actuatorMat, plotId: zone.plotId });
+
+        const jetMat = new THREE.MeshBasicMaterial({
+          color: 0xe0f2fe,
+          transparent: true,
+          opacity: 0.6,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+        const jet = new THREE.Mesh(new THREE.ConeGeometry(1.6, 1.8, 16, 1, true), jetMat);
+        jet.position.set(zone.x, 2.0, ez);
+        jet.rotation.x = Math.PI;
+        jet.visible = false;
+        scene.add(jet);
+        waterJets.push({ mesh: jet, plotId: zone.plotId });
+
+        const pCount = 380;
+        const pGeo = new THREE.BufferGeometry();
+        const pPos = new Float32Array(pCount * 3);
+        const pVels = [];
+
+        for (let i = 0; i < pCount; i++) {
+          pPos[i * 3] = zone.x;
+          pPos[i * 3 + 1] = 1.2;
+          pPos[i * 3 + 2] = ez;
+
+          const angle = Math.random() * Math.PI * 2;
+          const distSpeed = 0.08 + Math.random() * 0.12;
+          pVels.push({
+            angle,
+            speed: distSpeed,
+            vy: 0.18 + Math.random() * 0.12,
+            life: Math.random(),
+            originX: zone.x,
+            originZ: ez
+          });
+        }
+
+        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        const waterMat = new THREE.PointsMaterial({
+          color: 0x7dd3fc,
+          size: 0.22,
+          transparent: true,
+          opacity: 0.85,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        });
+        const waterSys = new THREE.Points(pGeo, waterMat);
+        waterSys.userData = { pVels };
+        waterSys.visible = false;
+        scene.add(waterSys);
+        waterParticleSystems.push({ sys: waterSys, plotId: zone.plotId });
+      });
+    }
+
+    let windGroup;
+
+    function createWindSystem() {
+      windGroup = new THREE.Group();
+      const windCount = 40;
+
+      for (let i = 0; i < windCount; i++) {
+        const points = [];
+        const length = 4 + Math.random() * 5;
+        const segments = 6;
+        for (let j = 0; j < segments; j++) {
+          points.push(new THREE.Vector3(j * (length / segments), Math.sin(j * 0.7) * 0.2, 0));
+        }
+
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const material = new THREE.LineBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.2 + Math.random() * 0.35,
+          linewidth: 2
+        });
+
+        const windLine = new THREE.Line(geometry, material);
+
+        windLine.position.set(
+          (Math.random() - 0.5) * 90,
+          1.5 + Math.random() * 5.5,
+          (Math.random() - 0.5) * 60
+        );
+
+        windLine.userData = {
+          speed: 0.12 + Math.random() * 0.08,
+          resetX: 45,
+          startX: -45,
+          waveOffset: Math.random() * Math.PI * 2,
+          baseY: windLine.position.y
+        };
+
+        windGroup.add(windLine);
+      }
+
+      scene.add(windGroup);
+    }
+
+    function createSolarPanelArray(x, z, plotId) {
+      const group = new THREE.Group();
+      group.position.set(x, 0, z);
+
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.85, roughness: 0.3 });
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.6, roughness: 0.4 });
+      const cellMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        metalness: 0.9,
+        roughness: 0.18,
+        emissive: 0x0369a1,
+        emissiveIntensity: 0.2
+      });
+
+      const panelCount = 3;
+      for (let i = 0; i < panelCount; i++) {
+        const px = (i - (panelCount - 1) / 2) * 1.9;
+
+        const legFront = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.05, 6), legMat);
+        legFront.position.set(px, 0.5, 0.55);
+        legFront.rotation.x = -0.4;
+        legFront.castShadow = true;
+
+        const legBack = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.85, 6), legMat);
+        legBack.position.set(px, 0.9, -0.5);
+        legBack.rotation.x = -0.4;
+        legBack.castShadow = true;
+
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.05, 2.15), frameMat);
+        frame.position.set(px, 1.25, 0);
+        frame.rotation.x = -0.55;
+        frame.castShadow = true;
+        frame.receiveShadow = true;
+
+        const cell = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.03, 1.95), cellMat);
+        cell.position.set(px, 1.29, 0);
+        cell.rotation.x = -0.55;
+        cell.castShadow = true;
+
+        group.add(legFront, legBack, frame, cell);
+      }
+
+      const boxMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.4, roughness: 0.6 });
+      const invBox = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.35), boxMat);
+      const invBoxX = -(panelCount - 1) / 2 * 1.9 - 1.1;
+      invBox.position.set(invBoxX, 0.3, 0.2);
+      invBox.castShadow = true;
+      group.add(invBox);
+
+      const pumpMotorMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.5, roughness: 0.4 });
+      const pumpVoluteMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.75, roughness: 0.28 });
+      const pumpTrimMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.25 });
+      const pumpPipeMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.8, roughness: 0.3 });
+      const pumpBoltMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.6, roughness: 0.5 });
+
+      const pumpGroup = new THREE.Group();
+      pumpGroup.position.set(invBoxX - 1.25, 0, 0.25);
+
+      const pumpBaseSlab = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.07, 0.55), pumpTrimMat);
+      pumpBaseSlab.position.set(0, 0.035, 0);
+      pumpBaseSlab.receiveShadow = true;
+      pumpBaseSlab.castShadow = true;
+      pumpGroup.add(pumpBaseSlab);
+
+      [[-0.5, -0.22], [-0.5, 0.22], [0.5, -0.22], [0.5, 0.22]].forEach(([bx, bz]) => {
+        const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.09, 8), pumpBoltMat);
+        bolt.position.set(bx, 0.08, bz);
+        bolt.castShadow = true;
+        pumpGroup.add(bolt);
+      });
+
+      const motorGroup = new THREE.Group();
+      motorGroup.position.set(0.32, 0.29, 0);
+      const motorCore = new THREE.Mesh(new THREE.CylinderGeometry(0.185, 0.185, 0.5, 16), pumpMotorMat);
+      motorCore.rotation.z = Math.PI / 2;
+      motorCore.castShadow = true;
+      motorGroup.add(motorCore);
+
+      for (let i = 0; i < 8; i++) {
+        const fin = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.014, 6, 16), pumpTrimMat);
+        fin.rotation.y = Math.PI / 2;
+        fin.position.set(-0.19 + i * 0.055, 0, 0);
+        fin.castShadow = true;
+        motorGroup.add(fin);
+      }
+
+      const fanCowl = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.19, 0.09, 14), pumpTrimMat);
+      fanCowl.rotation.z = Math.PI / 2;
+      fanCowl.position.set(0.29, 0, 0);
+      fanCowl.castShadow = true;
+      motorGroup.add(fanCowl);
+
+      const termBox = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.14), pumpBoltMat);
+      termBox.position.set(0, 0.22, 0);
+      termBox.castShadow = true;
+      motorGroup.add(termBox);
+      pumpGroup.add(motorGroup);
+
+      const voluteGroup = new THREE.Group();
+      voluteGroup.position.set(-0.18, 0.29, 0);
+      const voluteCore = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.28, 16), pumpVoluteMat);
+      voluteCore.rotation.z = Math.PI / 2;
+      voluteCore.castShadow = true;
+      voluteGroup.add(voluteCore);
+
+      const voluteBulge = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.26, 12), pumpVoluteMat);
+      voluteBulge.rotation.z = Math.PI / 2;
+      voluteBulge.position.set(0, -0.09, 0.09);
+      voluteBulge.castShadow = true;
+      voluteGroup.add(voluteBulge);
+
+      const coupling = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.06, 16), pumpTrimMat);
+      coupling.rotation.z = Math.PI / 2;
+      coupling.position.set(0.15, 0, 0);
+      coupling.castShadow = true;
+      voluteGroup.add(coupling);
+      pumpGroup.add(voluteGroup);
+
+      const suctionGroup = new THREE.Group();
+      suctionGroup.position.set(-0.4, 0.29, 0);
+      const suctionInlet = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.16, 10), pumpPipeMat);
+      suctionInlet.rotation.z = Math.PI / 2;
+      suctionInlet.position.set(0.08, 0, 0);
+      suctionInlet.castShadow = true;
+      suctionGroup.add(suctionInlet);
+      const suctionElbow = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.075, 8, 12, Math.PI / 2), pumpPipeMat);
+      suctionElbow.position.set(0, -0.14, 0);
+      suctionElbow.rotation.set(0, 0, Math.PI);
+      suctionElbow.castShadow = true;
+      suctionGroup.add(suctionElbow);
+      const suctionRun = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.55, 10), pumpPipeMat);
+      suctionRun.position.set(-0.14, -0.42, 0);
+      suctionRun.castShadow = true;
+      suctionGroup.add(suctionRun);
+
+      const suctionFlange = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.03, 14), pumpTrimMat);
+      suctionFlange.rotation.z = Math.PI / 2;
+      suctionFlange.position.set(0.14, 0, 0);
+      suctionFlange.castShadow = true;
+      suctionGroup.add(suctionFlange);
+      pumpGroup.add(suctionGroup);
+
+      const dischargeGroup = new THREE.Group();
+      dischargeGroup.position.set(-0.1, 0.42, 0.05);
+      const dischargeRiser = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.22, 10), pumpPipeMat);
+      dischargeRiser.position.set(0, 0.11, 0);
+      dischargeRiser.castShadow = true;
+      dischargeGroup.add(dischargeRiser);
+      const dischargeElbow = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.065, 8, 12, Math.PI / 2), pumpPipeMat);
+      dischargeElbow.position.set(0, 0.22, 0);
+      dischargeElbow.rotation.set(Math.PI / 2, 0, Math.PI / 2);
+      dischargeElbow.castShadow = true;
+      dischargeGroup.add(dischargeElbow);
+      const dischargeRun = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.6, 10), pumpPipeMat);
+      dischargeRun.rotation.z = Math.PI / 2;
+      dischargeRun.position.set(-0.3, 0.34, 0);
+      dischargeRun.castShadow = true;
+      dischargeGroup.add(dischargeRun);
+
+      const valveWheel = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.018, 8, 12), pumpBoltMat);
+      valveWheel.position.set(-0.15, 0.34, 0);
+      valveWheel.castShadow = true;
+      dischargeGroup.add(valveWheel);
+      pumpGroup.add(dischargeGroup);
+
+      group.add(pumpGroup);
+
+      scene.add(group);
+      solarPanels.push({ group, plotId });
+    }
+
+    function createLeafBladeGeometry(length, width, curve) {
+      const segs = 3; // ⚡ [Optimize] ลดจาก 8 เหลือ 3 เพื่อประหยัด GPU
+      const shape = [];
+      for (let i = 0; i <= segs; i++) {
+        const t = i / segs;
+        const yy = t * length;
+        const xx = Math.sin(t * Math.PI * 0.55) * curve;
+        const zz = 0;
+        shape.push(new THREE.Vector3(xx, yy, zz));
+      }
+      const curvePath = new THREE.CatmullRomCurve3(shape);
+      const points = curvePath.getPoints(segs);
+      const geo = new THREE.BufferGeometry();
+      const verts = [];
+      const idx = [];
+      for (let i = 0; i <= segs; i++) {
+        const t = i / segs;
+        const w = width * (1 - t * 0.85) * (t < 0.06 ? t / 0.06 : 1);
+        const p = points[i];
+        verts.push(p.x - w, p.y, p.z, p.x + w, p.y, p.z);
+        if (i < segs) {
+          const a = i * 2, b = i * 2 + 1, c = i * 2 + 2, d = i * 2 + 3;
+          idx.push(a, b, c, b, d, c, a, c, b, b, c, d);
+        }
+      }
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+      geo.setIndex(idx);
+      geo.computeVertexNormals();
+      return geo;
+    }
+
+    function createSugarcanePlant(x, y, z, plotId) {
+      const group = new THREE.Group();
+      group.position.set(x, y, z);
+
+      const stalkMat = new THREE.MeshStandardMaterial({ color: colorDryCane.clone(), roughness: 0.55 });
+      const nodeMat = new THREE.MeshStandardMaterial({ color: colorDryCane.clone(), roughness: 0.6 });
+      const stalkGroup = new THREE.Group();
+      const segCount = 7;
+      const stalkHeight = 3.3;
+      const segLen = stalkHeight / segCount;
+      const lean = (Math.random() - 0.5) * 0.06;
+      let by = 0;
+      for (let s = 0; s < segCount; s++) {
+        const rTop = 0.075 - s * 0.004;
+        const rBot = 0.085 - s * 0.004;
+        const seg = new THREE.Mesh(new THREE.CylinderGeometry(rTop, rBot, segLen * 0.92, 7), stalkMat);
+        seg.position.set(lean * (by / stalkHeight), by + segLen * 0.46, 0);
+        seg.castShadow = true;
+        stalkGroup.add(seg);
+
+        const node = new THREE.Mesh(new THREE.TorusGeometry(rBot + 0.006, 0.012, 6, 10), nodeMat);
+        node.position.set(lean * (by / stalkHeight), by, 0);
+        node.rotation.x = Math.PI / 2;
+        node.castShadow = true;
+        stalkGroup.add(node);
+        by += segLen;
+      }
+      group.add(stalkGroup);
+
+      const leafMat = new THREE.MeshStandardMaterial({ color: colorDryLeaf.clone(), roughness: 0.5, side: THREE.DoubleSide, emissive: 0x000000 });
+      const leafCount = 8;
+      const leaves = [];
+      for (let i = 0; i < leafCount; i++) {
+        const angle = (i * Math.PI * 2) / leafCount + Math.random() * 0.35;
+        const length = 0.95 + Math.random() * 0.35;
+        const curve = 0.35 + Math.random() * 0.25;
+        const bladeGeo = createLeafBladeGeometry(length, 0.045, curve);
+
+        const pivot = new THREE.Group();
+        pivot.position.set(Math.cos(angle) * 0.06, stalkHeight - 0.05, Math.sin(angle) * 0.06);
+        pivot.rotation.y = angle;
+
+        const blade = new THREE.Mesh(bladeGeo, leafMat);
+        blade.castShadow = true;
+        pivot.add(blade);
+        group.add(pivot);
+
+        leaves.push({
+          pivot,
+          blade,
+          wiltFanZ: -0.55 - Math.random() * 0.15,
+          lushFanZ: -0.1 - Math.random() * 0.15,
+          growDelay: i / leafCount * 0.35
+        });
+      }
+
+      scene.add(group);
+      farmObjects.push({ group, stalkGroup, stalkMat, nodeMat, leafMat, leaves, type: 'sugarcane', baseScale: 1.0, plotId });
+    }
+
+    function createDenseRicePlant(x, y, z, plotId) {
+      const riceGroup = new THREE.Group();
+      riceGroup.position.set(x, y, z);
+
+      const leafMat = new THREE.MeshStandardMaterial({
+        color: colorDryRice.clone(),
+        roughness: 0.6,
+        side: THREE.DoubleSide,
+        emissive: 0x000000
+      });
+      const bladeCount = 12;
+      const leaves = [];
+      for (let i = 0; i < bladeCount; i++) {
+        const angle = (i * Math.PI * 2) / bladeCount + Math.random() * 0.5;
+        const length = 0.65 + Math.random() * 0.35;
+        const curve = 0.15 + Math.random() * 0.15;
+
+        // 🌿 [ปรับแก้] เพิ่มความกว้างใบเป็น 0.055 ให้กอข้าวดูอวบหนาขึ้น
+        const bladeGeo = createLeafBladeGeometry(length, 0.055, curve);
+
+        const pivot = new THREE.Group();
+        pivot.position.set(Math.cos(angle) * 0.06, 0.03, Math.sin(angle) * 0.06);
+        pivot.rotation.y = angle;
+
+        const blade = new THREE.Mesh(bladeGeo, leafMat);
+        blade.castShadow = false; // ปิดเงาใบเพื่อความลื่นไหล (FPS สูง)
+        pivot.add(blade);
+        riceGroup.add(pivot);
+
+        leaves.push({
+          pivot,
+          blade,
+          wiltFanZ: -0.45 - Math.random() * 0.18,
+          lushFanZ: -0.08 - Math.random() * 0.14,
+          growDelay: (i % 5) / 5 * 0.3
+        });
+      }
+
+      scene.add(riceGroup);
+      farmObjects.push({ group: riceGroup, leafMat, leaves, type: 'rice', baseScale: 1.0, plotId });
+    }
+
+    let growthSparkles = [];
+
+    function createGrowthSparkles(zone) {
+      const count = 90;
+      const geo = new THREE.BufferGeometry();
+      const pos = new Float32Array(count * 3);
+      const data = [];
+      for (let i = 0; i < count; i++) {
+        const px = zone.x + (Math.random() - 0.5) * BED_HALF_X * 1.8;
+        const pz = (Math.random() - 0.5) * BED_HALF_Z * 1.9;
+        const py = 0.3 + Math.random() * 1.6;
+        pos[i * 3] = px; pos[i * 3 + 1] = py; pos[i * 3 + 2] = pz;
+        data.push({ baseX: px, baseY: py, baseZ: pz, phase: Math.random() * Math.PI * 2, speed: 0.6 + Math.random() * 0.8 });
+      }
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      const mat = new THREE.PointsMaterial({
+        color: 0xa3ffb0,
+        size: 0.14,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending
+      });
+      const points = new THREE.Points(geo, mat);
+      scene.add(points);
+      growthSparkles.push({ points, mat, data, plotId: zone.plotId });
+    }
+
+    function updateHUD() {
+      ZONES.forEach(zone => {
+        const plotState = state.plots[zone.plotId];
+        const el = document.getElementById('hud' + zone.plotId.charAt(0).toUpperCase() + zone.plotId.slice(1));
+        if (el) {
+          const val = Math.round(plotState.moisture);
+          el.innerText = `${val}%${plotState.pumpOn ? ' 💧' : ''}`;
+          el.style.color = plotState.pumpOn ? '#38bdf8' : '#f8fafc';
+        }
+      });
+    }
+
+    function updateLabels() {
+      const container = document.getElementById('webgl-container');
+      const w = container.clientWidth, h = container.clientHeight;
+      const v = new THREE.Vector3();
+
+      ZONES.forEach(zone => {
+        const plotState = state.plots[zone.plotId];
+        const plot = PLOTS[zone.plotId];
+        const label = document.getElementById('label-' + zone.plotId);
+        if (!label) return;
+
+        v.set(zone.x, 4.8, 0);
+        v.project(camera);
+
+        const sx = (v.x * 0.5 + 0.5) * w;
+        const sy = (-v.y * 0.5 + 0.5) * h;
+
+        if (v.z > 1) {
+          label.style.display = 'none';
+          return;
+        }
+
+        label.style.display = 'block';
+        label.style.left = sx + 'px';
+        label.style.top = sy + 'px';
+
+        const moisture = Math.round(plotState.moisture);
+        const isPumpOn = plotState.pumpOn;
+
+        label.innerHTML = `
+          <div class="plot-header">
+            <span style="color: ${zone.dotColor}; font-size: 15px;">●</span>
+            <span class="plot-name">${plot.plotCode} · ${plot.name}</span>
+          </div>
+          <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">
+            ${plot.crop}
+          </div>
+          
+          <div class="moisture-bar">
+            <div class="moisture-fill" style="width: ${moisture}%"></div>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px;">
+            <span><strong>${moisture}%</strong> ชื้น</span>
+            <span class="pump-status ${isPumpOn ? 'pump-on' : ''}">
+              ${isPumpOn ? '💧 กำลังรดน้ำ' : '⚪ ปิดปั๊ม'}
+            </span>
+          </div>
+        `;
+      });
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      update3DTime();
+      update3DLighting();
+      updateFarmAnimals();
+
+      if (windGroup) {
+        const time = performance.now() * 0.0015;
+        windGroup.children.forEach(line => {
+          line.position.x += line.userData.speed;
+          line.position.y = line.userData.baseY + Math.sin(time + line.userData.waveOffset) * 0.15;
+
+          if (line.position.x > line.userData.resetX) {
+            line.position.x = line.userData.startX;
+            line.position.z = (Math.random() - 0.5) * 60;
+          }
+        });
+      }
+
+      sprinklerHeads.forEach(h => {
+        if (state.plots[h.plotId].pumpOn) h.mesh.rotation.y += 0.25;
+      });
+
+      const nowMs = performance.now();
+      valveActuators.forEach(v => {
+        const on = state.plots[v.plotId].pumpOn;
+        v.mat.emissiveIntensity = on ? 0.45 + Math.sin(nowMs * 0.006) * 0.25 : 0.15;
+      });
+
+      waterJets.forEach(j => {
+        const on = state.plots[j.plotId].pumpOn;
+        j.mesh.visible = on;
+        if (!on) return;
+        j.mesh.rotation.y += 0.08;
+        const pulse = 1 + Math.sin(nowMs * 0.012 + j.mesh.position.x) * 0.15;
+        j.mesh.scale.set(pulse, 1, pulse);
+      });
+
+      waterParticleSystems.forEach(entry => {
+        const on = state.plots[entry.plotId].pumpOn;
+        entry.sys.visible = on;
+        if (!on) return;
+
+        const pos = entry.sys.geometry.attributes.position.array;
+        const pVels = entry.sys.userData.pVels;
+        for (let i = 0; i < pVels.length; i++) {
+          pVels[i].angle += 0.06;
+          pos[i * 3] += Math.cos(pVels[i].angle) * pVels[i].speed;
+          pos[i * 3 + 1] += pVels[i].vy;
+          pos[i * 3 + 2] += Math.sin(pVels[i].angle) * pVels[i].speed;
+
+          pVels[i].vy -= 0.008;
+
+          if (pos[i * 3 + 1] <= 0.4) {
+            pos[i * 3] = pVels[i].originX;
+            pos[i * 3 + 1] = 1.2;
+            pos[i * 3 + 2] = pVels[i].originZ;
+            pVels[i].vy = 0.18 + Math.random() * 0.12;
+          }
+        }
+        entry.sys.geometry.attributes.position.needsUpdate = true;
+      });
+
+      const _growColor = new THREE.Color();
+
+      farmObjects.forEach(v => {
+        const plotState = state.plots[v.plotId];
+        const moisture = plotState ? plotState.moisture : 0;
+
+        const targetProgress = Math.max(0, Math.min(1, moisture / 100));
+        if (v.displayProgress === undefined) { v.displayProgress = targetProgress; v.progressVel = 0; }
+        const springStiffness = 0.05, springDamping = 0.82;
+        const springForce = (targetProgress - v.displayProgress) * springStiffness;
+        v.progressVel = (v.progressVel + springForce) * springDamping;
+        v.displayProgress += v.progressVel;
+        const progress = Math.max(-0.06, Math.min(1.08, v.displayProgress));
+
+        const growthRate = Math.max(0, v.progressVel) * 22;
+        v.growthGlow = (v.growthGlow || 0) + (growthRate - (v.growthGlow || 0)) * 0.15;
+
+        const heightScale = THREE.MathUtils.lerp(0.10, 3.30, progress) * v.baseScale;
+        const girthScale = THREE.MathUtils.lerp(0.30, 1.15, progress) * v.baseScale;
+        v.group.scale.set(girthScale, heightScale, girthScale);
+
+        if (v.droopAxis === undefined) v.droopAxis = Math.random() * Math.PI * 2;
+        const droop = THREE.MathUtils.lerp(0.4, 0, progress);
+        v.group.rotation.x = Math.cos(v.droopAxis) * droop;
+        v.group.rotation.z = Math.sin(v.droopAxis) * droop;
+
+        if (v.stalkGroup) {
+          const stalkGirth = THREE.MathUtils.lerp(0.45, 1.35, progress);
+          v.stalkGroup.scale.set(stalkGirth, 1, stalkGirth);
+        }
+
+        if (v.leaves) {
+          v.leaves.forEach(leaf => {
+            const leafProgress = Math.max(0, Math.min(1, (progress - leaf.growDelay) / (1 - leaf.growDelay)));
+            const leafLength = THREE.MathUtils.lerp(0.12, 1.18, leafProgress);
+            const leafWidth = THREE.MathUtils.lerp(0.35, 1.05, leafProgress);
+            leaf.blade.scale.set(leafWidth, leafLength, leafWidth);
+            leaf.pivot.rotation.z = THREE.MathUtils.lerp(leaf.wiltFanZ, leaf.lushFanZ, leafProgress);
+          });
+        }
+
+        const colorProgress = Math.max(0, Math.min(1, progress));
+        // 🌿 [ปรับแก้] สลับโทนสีข้าวตามระดับความชื้น (จากแห้งส้ม -> เขียวตอง -> เขียวขจีสด)
+        if (v.type === 'sugarcane') {
+          v.leafMat.color.copy(sampleGrowthRamp(_growColor, colorDryLeaf, colorMidLeaf, colorFreshLeaf, colorProgress));
+          v.stalkMat.color.copy(sampleGrowthRamp(_growColor, colorDryCane, colorMidCane, colorFreshCane, colorProgress));
+          if (v.nodeMat) v.nodeMat.color.copy(sampleGrowthRamp(_growColor, colorDryCane, colorMidCane, colorFreshCane, colorProgress));
+        } else if (v.type === 'rice') {
+          v.leafMat.color.copy(sampleGrowthRamp(_growColor, colorDryRice, colorMidRice, colorFreshRice, colorProgress));
+        }
+
+        const glow = Math.min(1, v.growthGlow);
+        v.leafMat.emissive.setRGB(glow * 0.25, glow * 0.85, glow * 0.35);
+        v.leafMat.emissiveIntensity = glow * 0.9;
+
+        const pop = 1 + Math.sin(nowMs * 0.006 + (v.group.position.x || 0)) * 0.015 * glow;
+        v.group.scale.y *= pop;
+
+        if (v.swayPhase === undefined) v.swayPhase = Math.random() * Math.PI * 2;
+        const swayAmount = 0.05 * colorProgress;
+        v.group.rotation.y = Math.sin(nowMs * 0.0009 + v.swayPhase) * swayAmount;
+      });
+
+      growthSparkles.forEach(entry => {
+        const plotPlants = farmObjects.filter(f => f.plotId === entry.plotId);
+        const avgGlow = plotPlants.length
+          ? plotPlants.reduce((sum, f) => sum + Math.min(1, f.growthGlow || 0), 0) / plotPlants.length
+          : 0;
+        entry.targetOpacity = avgGlow;
+        entry.mat.opacity += ((entry.targetOpacity * 0.85) - entry.mat.opacity) * 0.08;
+
+        const pos = entry.points.geometry.attributes.position.array;
+        entry.data.forEach((d, i) => {
+          pos[i * 3] = d.baseX + Math.sin(nowMs * 0.001 * d.speed + d.phase) * 0.25;
+          pos[i * 3 + 1] = d.baseY + Math.sin(nowMs * 0.0016 * d.speed + d.phase * 1.7) * 0.35 + 0.4;
+          pos[i * 3 + 2] = d.baseZ + Math.cos(nowMs * 0.0011 * d.speed + d.phase) * 0.25;
+        });
+        entry.points.geometry.attributes.position.needsUpdate = true;
+      });
+
+      updateHUD();
+      updateLabels();
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    // === LOADING & INIT ===
+    function updateLoadingProgress(percent) {
+      const bar = document.getElementById('loadingProgress');
+      if (bar) bar.style.width = percent + '%';
+    }
+
+    function hide3DLoading() {
+      const loader = document.getElementById('threeLoadingScreen');
+      if (!loader) return;
+
+      // 🌊 เรียกใช้ Water Sweep Transition เมื่อโหลด 3D Geometry เสร็จ
+      if (typeof triggerWaterSweepEffect === 'function') {
+        triggerWaterSweepEffect(() => {
+          loader.classList.add('water-transition-out');
+          setTimeout(() => loader.remove(), 800);
+        });
+      } else {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.remove(), 700);
+      }
+    }
+
+    function init3D() {
+      const container = document.getElementById('webgl-container');
+
+      updateLoadingProgress(10);
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xfdba74);
+      scene.fog = new THREE.FogExp2(0xfcd34d, 0.0022);
+
+      camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.set(0, 30, 46);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      // 🌟 [อัปเดต] เปิดใช้งาน sRGB Encoding เพื่อให้แสงเงาและการผสมสีสมจริงที่สุด
+      renderer.outputEncoding = THREE.sRGBEncoding;
+
+      // 🌟 [อัปเดต] การตั้งค่า Shadow Map
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap; // ให้ขอบเงาฟุ้งนุ่มนวล
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.2;
+      container.appendChild(renderer.domElement);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.target.set(0, 0, 0);
+      controls.maxPolarAngle = Math.PI / 2 - 0.02;
+
+      updateLoadingProgress(30);
+
+      createWindSystem();
+      ambientLight = new THREE.AmbientLight(0xffedd5, 0.7);
+      scene.add(ambientLight);
+      hemiLight = new THREE.HemisphereLight(0xfef08a, 0x9a3412, 0.6);
+      scene.add(hemiLight);
+
+      // 🌟 [อัปเดต] ปรับแต่งคุณสมบัติการทอดเงาของแสงอาทิตย์ (sunLight)
+      sunLight = new THREE.DirectionalLight(0xff8c00, 3.5);
+      sunLight.position.set(50, 35, -42);
+      sunLight.castShadow = true;
+
+      // 1. เพิ่มความละเอียดของภาพเงาเป็น 2048x2048 (จากเดิม 512x512)
+      sunLight.shadow.mapSize.width = 2048;
+      sunLight.shadow.mapSize.height = 2048;
+
+      // 2. กำหนดขอบเขตกล้องเงา (Shadow Camera) ให้บีบกระชับเฉพาะพื้นที่ฟาร์ม
+      const d = 40;
+      sunLight.shadow.camera.left = -d;
+      sunLight.shadow.camera.right = d;
+      sunLight.shadow.camera.top = d;
+      sunLight.shadow.camera.bottom = -d;
+      sunLight.shadow.camera.near = 10;
+      sunLight.shadow.camera.far = 130;
+
+      // 3. ปรับค่า Bias เพื่อลบรอยรอยหยัก/รอยแถบลายเสือ (Shadow Acne) บนพื้นผิว
+      sunLight.shadow.bias = -0.0003;
+      sunLight.shadow.normalBias = 0.04;
+
+      // 4. เพิ่มความนุ่มฟุ้งบริเวณขอบเงา
+      sunLight.shadow.radius = 3;
+
+      scene.add(sunLight);
+
+      updateLoadingProgress(50);
+      createSunsetSun(sunLight.position);
+      createGround();
+      createSurroundingTrees();
+      createFarmAnimals();
+
+      updateLoadingProgress(70);
+
+      ZONES.forEach(zone => createPlotZone(zone));
+
+      updateLoadingProgress(90);
+
+      const params = new URLSearchParams(window.location.search);
+      const focusPlot = params.get('plot');
+      if (focusPlot && PLOTS[focusPlot]) {
+        switchContact(focusPlot);
+        const focusZone = ZONES.find(z => z.plotId === focusPlot);
+        if (focusZone) controls.target.set(focusZone.x, 1, 0);
+      }
+
+      updateLoadingProgress(100);
+
+      setTimeout(() => {
+        hide3DLoading();
+        animate();
+      }, 300);
+    }
+
+    window.onload = () => {
+      init3D();
+    };
+
+    window.addEventListener('resize', () => {
+      const container = document.getElementById('webgl-container');
+      if (!container || !camera || !renderer) return;
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+  </script>
+</body>
+
+</html>

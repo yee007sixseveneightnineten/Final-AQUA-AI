@@ -1,0 +1,2307 @@
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* Brand palette pulled from the reference dashboard/app screens */
+  --aqua-deep: #061e3d;
+  --aqua-navy: #0b2c52;
+  --aqua-blue: #1478c9;
+  --aqua-sky: #4fc3f7;
+  --aqua-cyan: #7fe3ec;
+  --aqua-foam: #eaf8fb;
+
+  /* Light UI surface tokens */
+  --page-bg: #eef4fb;
+  --card-bg: #ffffff;
+  --card-border: #e3edf7;
+  --card-shadow: 0 2px 10px rgba(15, 55, 100, 0.06), 0 1px 2px rgba(15, 55, 100, 0.04);
+  --ink: #10233d;
+  --ink-soft: #5b6b82;
+  --ink-faint: #93a2b6;
+  --sidebar-w: 236px;
+
+  /* Secondary surfaces that need explicit dark variants */
+  --surface-soft: #f6faff;
+  --surface-soft-hover: #eaf4fc;
+  --track-bg: #e2e8f0;
+  --badge-idle-bg: #f1f5f9;
+  --bubble-bot-bg: #ffffff;
+  --bubble-bot-ink: #1e293b;
+  --bubble-user-bg: #bdf0f7;
+  --bubble-user-ink: #0f2b3a;
+  --chat-bg-1: #eaf4fb;
+  --chat-bg-2: #dcecfa;
+  --phone-bg: #f4f9fd;
+}
+
+[data-theme="dark"] {
+  --page-bg: #0a1626;
+  --card-bg: #101f36;
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --ink: #eaf1fb;
+  --ink-soft: #a4b3c9;
+  --ink-faint: #71829c;
+
+  --surface-soft: rgba(255, 255, 255, 0.05);
+  --surface-soft-hover: rgba(255, 255, 255, 0.09);
+  --track-bg: rgba(255, 255, 255, 0.12);
+  --badge-idle-bg: rgba(255, 255, 255, 0.08);
+  --bubble-bot-bg: #16283f;
+  --bubble-bot-ink: #e8f0fa;
+  --bubble-user-bg: #1d3e52;
+  --bubble-user-ink: #d6f3fb;
+  --chat-bg-1: #0f2137;
+  --chat-bg-2: #0a1930;
+  --phone-bg: #0d1c30;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'Sarabun', sans-serif;
+  background: var(--page-bg);
+  color: var(--ink);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ===================== App shell: sidebar + topbar ===================== */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  align-items: flex-start;
+}
+
+.side-nav {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--card-bg);
+  border-right: 1px solid var(--card-border);
+  padding: 20px 14px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.side-nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 20px 8px;
+}
+
+.side-nav-brand .brand-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, var(--aqua-sky), var(--aqua-blue));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 15px;
+  box-shadow: 0 3px 8px rgba(20, 120, 201, 0.35);
+}
+
+.side-nav-brand .brand-title {
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--aqua-navy);
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.side-nav-brand .brand-sub {
+  font-size: 9.5px;
+  color: var(--ink-faint);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.side-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  text-decoration: none;
+  margin-bottom: 2px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.side-nav-item i {
+  width: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-faint);
+  transition: color 0.15s ease;
+}
+
+.side-nav-item:hover {
+  background: var(--surface-soft);
+  color: var(--aqua-navy);
+  transform: translateX(2px);
+}
+
+[data-theme="dark"] .side-nav-item:hover { color: #ffffff; }
+
+.side-nav-item.active {
+  background: linear-gradient(90deg, rgba(20, 120, 201, 0.1), rgba(79, 195, 247, 0.06));
+  color: var(--aqua-blue);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 0 var(--aqua-blue);
+}
+
+.side-nav-item.active i {
+  color: var(--aqua-blue);
+}
+
+.side-nav-community {
+  margin-top: 16px;
+  padding: 12px 13px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+  border: 1px solid var(--card-border);
+  transition: background-color 0.3s ease;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===================== Top bar ===================== */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--card-border);
+  padding: 12px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.top-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  background: var(--surface-soft);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 7px 12px;
+  transition: background-color 0.3s ease;
+}
+
+.top-pill .pill-label {
+  color: var(--ink-faint);
+  font-size: 10px;
+}
+
+.top-pill .pill-value {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.status-online-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #16a34a;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 999px;
+  padding: 7px 13px;
+}
+
+.bell-btn {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-soft);
+  border: 1px solid var(--card-border);
+  color: var(--ink-soft);
+  transition: background-color 0.3s ease;
+}
+
+/* ===================== Theme toggle ===================== */
+.theme-toggle-btn {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-soft);
+  border: 1px solid var(--card-border);
+  color: #f5b300;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+.theme-toggle-btn:hover { transform: rotate(12deg); }
+.theme-toggle-btn i {
+  position: absolute;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+}
+.theme-toggle-btn .icon-sun { transform: translateY(0) rotate(0deg); opacity: 1; }
+.theme-toggle-btn .icon-moon { transform: translateY(40px) rotate(-90deg); opacity: 0; color: #93c5fd; }
+[data-theme="dark"] .theme-toggle-btn .icon-sun { transform: translateY(-40px) rotate(90deg); opacity: 0; }
+[data-theme="dark"] .theme-toggle-btn .icon-moon { transform: translateY(0) rotate(0deg); opacity: 1; }
+
+.bell-dot {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1.5px solid var(--card-border);
+}
+
+/* ===================== Cards ===================== */
+.aqua-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  border-radius: 14px;
+}
+
+.card-heading {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.card-subtext {
+  font-size: 10.5px;
+  color: var(--ink-faint);
+}
+
+/* Numbered metric cards */
+.metric-card {
+  position: relative;
+}
+
+.metric-num {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--aqua-blue);
+  font-size: 9.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-icon-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+/* Ripple / bubble decorations removed for the light corporate theme */
+.ripple-bg { display: none; }
+.wave-divider { display: none; }
+
+/* Scrollbar tint for the chat panel */
+#lineChatContainer::-webkit-scrollbar {
+  width: 6px;
+}
+#lineChatContainer::-webkit-scrollbar-thumb {
+  background: rgba(20, 120, 201, 0.25);
+  border-radius: 4px;
+}
+
+/* Clickable farmer row */
+.farmer-row {
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.farmer-row.active-row {
+  background: linear-gradient(90deg, rgba(79, 195, 247, 0.1), transparent);
+  box-shadow: inset 3px 0 0 0 var(--aqua-sky);
+}
+
+/* Contact switcher chips */
+.contact-chip {
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.contact-chip:hover {
+  transform: translateY(-1px);
+}
+.contact-chip.active-chip {
+  background: rgba(79, 195, 247, 0.14);
+  border-color: rgba(20, 120, 201, 0.45) !important;
+}
+
+/* Water droplet loading / saved pulse */
+@keyframes drop-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+.saving-indicator {
+  animation: drop-pulse 1.2s ease-in-out infinite;
+}
+
+/* ===================== Traffic light irrigation panel ===================== */
+.traffic-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-weight: 700;
+  font-size: 13px;
+}
+.traffic-row .traffic-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.traffic-row .traffic-sub {
+  font-size: 10.5px;
+  font-weight: 500;
+}
+.traffic-row.traffic-green { background: #eefbf1; color: #15803d; }
+.traffic-row.traffic-green .traffic-dot { background: #22c55e; }
+.traffic-row.traffic-yellow { background: #fef8e8; color: #a16207; }
+.traffic-row.traffic-yellow .traffic-dot { background: #f5b300; }
+.traffic-row.traffic-red { background: #fdedec; color: #b91c1c; }
+.traffic-row.traffic-red .traffic-dot { background: #e33d3d; }
+
+[data-theme="dark"] .traffic-row.traffic-green { background: rgba(34, 197, 94, 0.14); color: #6ee7a3; }
+[data-theme="dark"] .traffic-row.traffic-yellow { background: rgba(245, 179, 0, 0.14); color: #f9d879; }
+[data-theme="dark"] .traffic-row.traffic-red { background: rgba(227, 61, 61, 0.16); color: #f5a3a3; }
+
+/* Dark-mode tints for pastel Tailwind utility backgrounds used across icon chips / advice badges */
+[data-theme="dark"] .bg-sky-50 { background-color: rgba(56, 189, 248, 0.14); }
+[data-theme="dark"] .bg-cyan-50 { background-color: rgba(34, 211, 238, 0.14); }
+[data-theme="dark"] .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.14); }
+[data-theme="dark"] .bg-indigo-50 { background-color: rgba(99, 102, 241, 0.16); }
+[data-theme="dark"] .bg-amber-50 { background-color: rgba(245, 158, 11, 0.14); }
+[data-theme="dark"] .bg-blue-50 { background-color: rgba(59, 130, 246, 0.14); }
+[data-theme="dark"] .bg-rose-50 { background-color: rgba(244, 63, 94, 0.14); }
+[data-theme="dark"] .bg-slate-100 { background-color: rgba(255, 255, 255, 0.07); }
+[data-theme="dark"] .bg-slate-200 { background-color: rgba(255, 255, 255, 0.14); }
+[data-theme="dark"] .border-amber-200 { border-color: rgba(245, 158, 11, 0.3); }
+[data-theme="dark"] .border-emerald-200 { border-color: rgba(16, 185, 129, 0.3); }
+[data-theme="dark"] .border-blue-200 { border-color: rgba(59, 130, 246, 0.3); }
+
+/* ===================== Phone / LINE OA mockup (theme-aware) ===================== */
+.phone-frame {
+  background: var(--phone-bg);
+  border: 8px solid #12294a;
+  border-radius: 36px;
+  box-shadow: 0 18px 40px rgba(11, 44, 82, 0.18);
+  transition: background-color 0.3s ease;
+}
+
+.phone-notch-bar {
+  background: #12294a;
+}
+
+.line-header {
+  background: linear-gradient(120deg, var(--card-bg), var(--surface-soft));
+  border-bottom: 1px solid var(--card-border);
+  color: var(--ink);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.line-quickmenu {
+  background: var(--card-bg);
+  border-top: 1px solid var(--card-border);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.line-quickmenu-btn {
+  background: var(--surface-soft);
+  border: 1px solid var(--card-border);
+  color: var(--ink);
+  transition: background-color 0.15s ease, transform 0.1s ease;
+}
+.line-quickmenu-btn:hover { background: var(--surface-soft-hover); }
+.line-quickmenu-btn:active { transform: scale(0.96); }
+
+.line-quickmenu-btn.pump-btn {
+  background: rgba(79, 195, 247, 0.12);
+  border-color: rgba(20, 120, 201, 0.35);
+  color: var(--aqua-blue);
+}
+
+/* Chat surfaces */
+.chat-body-bg {
+  background: linear-gradient(180deg, var(--chat-bg-1), var(--chat-bg-2));
+  transition: background-color 0.3s ease;
+}
+.bubble-bot {
+  background: var(--bubble-bot-bg);
+  color: var(--bubble-bot-ink);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+.bubble-user {
+  background: var(--bubble-user-bg);
+  color: var(--bubble-user-ink);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Generic reusable surfaces */
+.surface-soft {
+  background: var(--surface-soft) !important;
+  transition: background-color 0.3s ease;
+}
+.track-bg { background: var(--track-bg) !important; }
+.badge-idle { background: var(--badge-idle-bg) !important; }
+.row-hover:hover { background: rgba(56, 189, 248, 0.08); }
+
+/* ===== Interactive Map ===== */
+.map-canvas {
+  position: relative;
+  overflow: hidden;
+  background: #142a1c;
+}
+
+.map-viewport {
+  position: absolute;
+  inset: 0;
+  transform-origin: center center;
+  transition: transform 0.35s ease;
+  will-change: transform;
+}
+
+.map-terrain {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: filter 0.35s ease;
+}
+
+/* Alternate "data layer" view — mutes the aerial texture so the moisture zones read clearly */
+.map-canvas.map-layer-plain .map-terrain {
+  filter: grayscale(0.6) brightness(0.55);
+}
+.map-canvas.map-layer-plain .field-zone {
+  fill-opacity: 0.92;
+  stroke-opacity: 0.9;
+}
+
+.map-controls {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.map-control-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: rgba(6, 20, 38, 0.8);
+  border: 1px solid rgba(79, 195, 247, 0.25);
+  color: #7fe3ec;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+.map-control-btn:hover {
+  background: rgba(20, 120, 201, 0.4);
+}
+.map-control-btn:active {
+  transform: scale(0.92);
+}
+
+.map-legend {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  background: rgba(6, 20, 38, 0.82);
+  border: 1px solid rgba(79, 195, 247, 0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  min-width: 140px;
+  backdrop-filter: blur(4px);
+}
+.map-legend-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #cfeaf2;
+  margin-bottom: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.map-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  color: #eaf3f5;
+  padding: 2.5px 0;
+}
+.map-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  box-shadow: 0 0 4px currentColor;
+}
+
+/* Field polygons (SVG <path> elements) */
+.field-zone {
+  stroke: #eaf8fb;
+  stroke-width: 3;
+  stroke-opacity: 0.55;
+  stroke-linejoin: round;
+  fill-opacity: 0.8;
+  transition: fill 0.4s ease;
+}
+
+/* Moisture status colors — used by SVG fill (zones) and div background (pins/legend dots) */
+.moisture-wet { background-color: #22c55e; fill: #22c55e; color: #22c55e; }
+.moisture-normal { background-color: #f5b300; fill: #f5b300; color: #f5b300; }
+.moisture-dry { background-color: #f2790f; fill: #f2790f; color: #f2790f; }
+.moisture-critical { background-color: #e33d3d; fill: #e33d3d; color: #e33d3d; }
+
+.map-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  border: 2.5px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.map-pin:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+.map-pin.pin-active {
+  box-shadow: 0 0 0 4px rgba(79, 195, 247, 0.55), 0 2px 10px rgba(0, 0, 0, 0.45);
+}
+.map-pin.pin-critical {
+  animation: drop-pulse 1.4s ease-in-out infinite;
+}
+
+.map-pin-label {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #f4fbfc;
+  background: rgba(6, 20, 38, 0.8);
+  padding: 2px 7px;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.map-alert-banner {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 10;
+  background: rgba(69, 15, 15, 0.8);
+  border: 1px solid rgba(239, 68, 68, 0.55);
+  border-radius: 10px;
+  padding: 9px 13px;
+  font-size: 11.5px;
+  color: #fecaca;
+  align-items: flex-start;
+  gap: 8px;
+  backdrop-filter: blur(4px);
+}
+
+/* ===================== Mobile navigation drawer ===================== */
+.mobile-menu-btn { display: none; }
+
+@media (max-width: 1024px) {
+  .mobile-menu-btn {
+    display: flex;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-soft);
+    border: 1px solid var(--card-border);
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+
+  .side-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 110;
+    height: 100vh;
+    transform: translateX(-100%);
+    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+    box-shadow: 12px 0 32px rgba(0, 0, 0, 0.25);
+  }
+  .side-nav.mobile-open {
+    transform: translateX(0);
+  }
+
+  .mobile-nav-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 105;
+    background: rgba(6, 15, 30, 0.5);
+    backdrop-filter: blur(1px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .mobile-nav-backdrop.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (min-width: 1025px) {
+  .mobile-nav-backdrop { display: none; }
+}
+
+/* ===================== Smooth Scroll Sections ===================== */
+.page-view { 
+  display: block !important; /* บังคับให้แสดงทุกหน้าเรียงกันลงมา */
+  min-height: 50vh; /* ให้แต่ละส่วนมีความสูงกำลังดี */
+  padding-top: 40px; /* เพิ่มระยะห่างด้านบน */
+  padding-bottom: 60px;
+  border-bottom: 2px dashed var(--card-border); /* เพิ่มเส้นประคั่นระหว่างหมวดหมู่ให้ดูง่าย */
+}
+.page-view:last-child {
+  border-bottom: none;
+}
+@keyframes pageSlideDown {
+  0% { clip-path: inset(0 0 100% 0); opacity: 0; transform: translateY(-14px); }
+  35% { opacity: 1; }
+  100% { clip-path: inset(0 0 0 0); opacity: 1; transform: translateY(0); }
+}
+
+/* Thin progress bar that sweeps across on every page switch, so a
+   navigation click always gives an obvious, visible signal. */
+.page-load-bar {
+  position: sticky;
+  top: 0;
+  z-index: 39;
+  height: 3px;
+  width: 100%;
+  background: transparent;
+  overflow: hidden;
+}
+.page-load-bar span {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--aqua-sky), var(--aqua-blue));
+  box-shadow: 0 0 8px rgba(20, 120, 201, 0.6);
+}
+.page-load-bar.running span {
+  animation: pageLoadSweep 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes pageLoadSweep {
+  0% { width: 0%; opacity: 1; }
+  70% { width: 100%; opacity: 1; }
+  100% { width: 100%; opacity: 0; }
+}
+
+/* Brief highlight pulse on the page title icon so the new section is unmistakable */
+.page-header-icon.icon-pulse {
+  animation: iconPulse 0.6s ease;
+}
+@keyframes iconPulse {
+  0% { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0.6); }
+  70% { box-shadow: 0 0 0 12px rgba(79, 195, 247, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(79, 195, 247, 0); }
+}
+
+.page-header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  background: linear-gradient(160deg, var(--aqua-sky), var(--aqua-blue));
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(20, 120, 201, 0.3);
+  flex-shrink: 0;
+}
+
+/* ===================== Bar chart rows (Water Allocation / Reports) ===================== */
+.bar-chart-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+.bar-chart-label { width: 140px; flex-shrink: 0; font-size: 11.5px; font-weight: 600; color: var(--ink); }
+.bar-chart-track {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--track-bg);
+  overflow: hidden;
+}
+.bar-chart-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--aqua-sky), var(--aqua-blue));
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.bar-chart-value { width: 88px; flex-shrink: 0; text-align: right; font-size: 11.5px; font-weight: 700; color: var(--aqua-blue); }
+
+/* ===================== Alert items ===================== */
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  font-size: 12px;
+  border: 1px solid var(--card-border);
+}
+.alert-item .alert-title { font-weight: 700; color: var(--ink); }
+.alert-item .alert-sub { font-size: 10.5px; color: var(--ink-faint); margin-top: 1px; }
+.alert-item.alert-critical { background: rgba(227, 61, 61, 0.08); border-color: rgba(227, 61, 61, 0.25); }
+.alert-item.alert-warning { background: rgba(245, 179, 0, 0.08); border-color: rgba(245, 179, 0, 0.25); }
+.alert-item.alert-info { background: rgba(20, 120, 201, 0.08); border-color: rgba(20, 120, 201, 0.22); }
+.alert-item .alert-icon { font-size: 15px; margin-top: 1px; }
+.alert-item.alert-critical .alert-icon { color: #e33d3d; }
+.alert-item.alert-warning .alert-icon { color: #d69400; }
+.alert-item.alert-info .alert-icon { color: var(--aqua-blue); }
+
+/* ===================== IoT device chips ===================== */
+.iot-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border-radius: 12px;
+  background: var(--surface-soft);
+  border: 1px solid var(--card-border);
+  text-align: center;
+}
+.iot-chip i { font-size: 18px; color: var(--aqua-blue); }
+.iot-chip .iot-name { font-size: 10.5px; font-weight: 700; color: var(--ink); }
+.iot-chip .iot-status { font-size: 9.5px; color: #16a34a; font-weight: 600; }
+
+/* ===================== Circular progress ring (Digital Twin) ===================== */
+.ring-progress {
+  width: 74px;
+  height: 74px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.ring-progress::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 999px;
+  background: var(--card-bg);
+}
+.ring-progress span {
+  position: relative;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+/* ===================== Settings toggle switch ===================== */
+.pref-switch {
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--track-bg);
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.25s ease;
+}
+.pref-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.pref-switch.on { background: var(--aqua-blue); }
+.pref-switch.on::after { transform: translateX(18px); }
+
+.pref-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--card-border);
+}
+.pref-row:last-child { border-bottom: none; }
+.pref-row .pref-title { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.pref-row .pref-sub { font-size: 10.5px; color: var(--ink-faint); margin-top: 1px; }
+
+/* ===================== Offline banner (PWA) ===================== */
+.offline-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-align: center;
+  color: #fff;
+  background: linear-gradient(90deg, #d97706, #b45309);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+.offline-banner.visible { display: flex; }
+
+.page-view {
+  scroll-margin-top: 80px; /* สำคัญมาก: เผื่อระยะแถบด้านบน เพื่อไม่ให้บังหัวข้อตอนเลื่อนมาถึง */
+} 
+
+/* 🌊 1. ฉากพื้นหลังไล่เฉดสีเคลื่อนไหวช้าๆ (Animated Background) */
+.welcome-overlay.water-splash-theme {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: linear-gradient(-45deg, #0096c7, #0077b6, #023e8a, #001845);
+  background-size: 300% 300%;
+  animation: bgWaveGradient 8s ease-in-out infinite;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  padding: 24px;
+  overflow: hidden;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s ease;
+}
+
+@keyframes bgWaveGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 🌊 2. คลื่นน้ำด้านล่างขยับซ้อนกัน 2 ชั้น (Parallax Wave Effect) */
+.bottom-water-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 110px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bottom-water-wave .wave-svg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+}
+
+.bottom-water-wave .wave-layer-1 {
+  animation: waveLoop 9s linear infinite;
+}
+
+.bottom-water-wave .wave-layer-2 {
+  animation: waveLoop 5.5s linear infinite reverse;
+}
+
+@keyframes waveLoop {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ===================== Water Splash Welcome Overlay ===================== */
+.welcome-overlay.water-splash-theme {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: linear-gradient(180deg, #0096c7 0%, #0077b6 50%, #023e8a 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  padding: 24px;
+  overflow: hidden;
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s ease;
+}
+
+.welcome-overlay.fade-out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Container ของ Effect Water Splash */
+.water-splash-container {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+/* 1. หยดน้ำร่วงลงมา */
+.splash-drop {
+  position: absolute;
+  width: 16px;
+  height: 24px;
+  background: #caf0f8;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  top: -80px;
+  opacity: 0;
+  animation: dropFall 0.8s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+}
+
+@keyframes dropFall {
+  0% { top: -100px; opacity: 0; transform: scaleY(1.3); }
+  70% { opacity: 1; }
+  100% { top: 50%; opacity: 0; transform: scaleY(0.3); }
+}
+
+/* 2. วงคลื่นน้ำกระจายออก (Ripples) */
+.splash-ripple {
+  position: absolute;
+  border: 3px solid rgba(202, 240, 248, 0.85);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+  transform: scale(0);
+}
+
+.ripple-1 { animation: rippleOut 1.4s ease-out 0.75s infinite; }
+.ripple-2 { animation: rippleOut 1.4s ease-out 1.0s infinite; }
+.ripple-3 { animation: rippleOut 1.4s ease-out 1.25s infinite; }
+
+@keyframes rippleOut {
+  0% { width: 20px; height: 10px; opacity: 1; transform: scale(0.5); }
+  100% { width: 260px; height: 130px; opacity: 0; transform: scale(1.6); border-width: 1px; }
+}
+
+/* 3. เม็ดน้ำกระเซ็นแตกออก (Splash Droplets) */
+.splash-particles .p-drop {
+  position: absolute;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  opacity: 0;
+}
+
+.pd-1 { width: 8px; height: 8px; animation: splashPop1 0.7s ease-out 0.78s forwards; }
+.pd-2 { width: 10px; height: 10px; animation: splashPop2 0.7s ease-out 0.78s forwards; }
+.pd-3 { width: 6px; height: 6px; animation: splashPop3 0.7s ease-out 0.78s forwards; }
+.pd-4 { width: 9px; height: 9px; animation: splashPop4 0.7s ease-out 0.78s forwards; }
+.pd-5 { width: 7px; height: 7px; animation: splashPop5 0.7s ease-out 0.78s forwards; }
+.pd-6 { width: 11px; height: 11px; animation: splashPop6 0.7s ease-out 0.78s forwards; }
+
+@keyframes splashPop1 { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(-60px, -50px) scale(0.3); opacity: 0; } }
+@keyframes splashPop2 { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(65px, -60px) scale(0.3); opacity: 0; } }
+@keyframes splashPop3 { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(-75px, 20px) scale(0.3); opacity: 0; } }
+@keyframes splashPop4 { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(70px, 30px) scale(0.3); opacity: 0; } }
+@keyframes splashPop5 { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(-30px, -70px) scale(0.3); opacity: 0; } }
+@keyframes splashPop6 { 0% { transform: translate(0,0); opacity: 1; } 100% { transform: translate(35px, -75px) scale(0.3); opacity: 0; } }
+
+/* 4. โลโก้เด้งขึ้นมาจากจุดกระแทกน้ำ */
+.splash-logo {
+  width: 95px;
+  height: 95px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #00f5d4 0%, #00bbf9 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 46px;
+  color: #03045e;
+  box-shadow: 0 12px 35px rgba(0, 245, 212, 0.5), 0 0 0 3px rgba(255, 255, 255, 0.4);
+  z-index: 5;
+  opacity: 0;
+  transform: scale(0.2);
+  animation: logoPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.8s forwards;
+}
+
+@keyframes logoPop {
+  0% { opacity: 0; transform: scale(0.2); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* หัวข้อและคำอธิบาย */
+.splash-text {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  text-shadow: 0 4px 20px rgba(0, 180, 216, 0.6);
+}
+
+.splash-badge {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 18px;
+  border-radius: 999px;
+  margin-top: 6px;
+  margin-bottom: 16px;
+}
+
+.bottom-water-wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 90px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.bottom-water-wave svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* ===================== Urgent / Critical Water Alert Toast ===================== */
+#urgentToastContainer {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(92vw, 420px);
+  pointer-events: none;
+}
+.urgent-toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 10px 30px rgba(185, 28, 28, 0.45);
+  animation: urgentToastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), urgentToastShake 0.5s ease 0.35s;
+}
+.urgent-toast.toast-out {
+  animation: urgentToastOut 0.35s ease forwards;
+}
+.urgent-toast .urgent-toast-icon {
+  font-size: 18px;
+  margin-top: 1px;
+  animation: urgentIconPulse 1s ease-in-out infinite;
+}
+.urgent-toast .urgent-toast-text {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+.urgent-toast .urgent-toast-close {
+  background: rgba(255, 255, 255, 0.18);
+  border: none;
+  color: #fff;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+}
+@keyframes urgentToastIn {
+  0% { opacity: 0; transform: translateY(-16px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes urgentToastOut {
+  0% { opacity: 1; transform: translateY(0) scale(1); max-height: 100px; }
+  100% { opacity: 0; transform: translateY(-10px) scale(0.95); max-height: 0; margin: 0; padding-top: 0; padding-bottom: 0; }
+}
+@keyframes urgentToastShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+@keyframes urgentIconPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}
+
+/* Bell button reacts strongly when a critical (<20%) alert fires */
+.bell-btn.bell-shake {
+  animation: bellShake 0.6s ease;
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #ef4444;
+}
+@keyframes bellShake {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(-18deg); }
+  30% { transform: rotate(16deg); }
+  45% { transform: rotate(-12deg); }
+  60% { transform: rotate(10deg); }
+  75% { transform: rotate(-6deg); }
+  90% { transform: rotate(4deg); }
+}
+.bell-dot.bell-dot-urgent {
+  background: #ef4444;
+  animation: bellDotPop 0.5s ease;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.35);
+}
+@keyframes bellDotPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.5); }
+  100% { transform: scale(1); }
+}
+
+/* ===================== Speed Multiplier Control Pills ===================== */
+.speed-control-group {
+  display: flex;
+  align-items: center;
+  background: var(--surface-soft);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+.speed-btn {
+  padding: 3px 8px;
+  border-radius: 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.speed-btn:hover {
+  color: var(--ink);
+  background: rgba(255, 255, 255, 0.1);
+}
+.speed-btn.active {
+  background: var(--aqua-blue);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(20, 120, 201, 0.3);
+}
+
+/* ===================== Notification Dropdown ===================== */
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 320px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.notif-dropdown.hidden {
+  display: none !important;
+}
+
+.notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--card-border);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--surface-soft);
+}
+
+.notif-clear-btn {
+  font-size: 11px;
+  color: var(--aqua-blue);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+.notif-clear-btn:hover { text-decoration: underline; }
+
+.notif-list {
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.notif-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--card-border);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item.unread {
+  background: rgba(20, 120, 201, 0.05);
+}
+.notif-item:hover {
+  background: var(--surface-soft-hover);
+}
+
+.notif-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 13px;
+}
+.notif-icon.info { background: rgba(20, 120, 201, 0.12); color: var(--aqua-blue); }
+.notif-icon.critical { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+.notif-icon.warning { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+
+.notif-content { flex: 1; }
+.notif-title { font-size: 12px; font-weight: 700; color: var(--ink); }
+.notif-text { font-size: 11px; color: var(--ink-soft); margin-top: 2px; line-height: 1.4; }
+.notif-time { font-size: 9.5px; color: var(--ink-faint); margin-top: 4px; }
+
+/* ===================== Interactive Calendar Dropdown ===================== */
+.calendar-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 290px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+  padding: 16px;
+  font-family: 'Sarabun', sans-serif;
+  transition: all 0.2s ease;
+}
+
+.calendar-dropdown.hidden {
+  display: none !important;
+}
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cal-title {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.cal-nav-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-soft);
+  border: 1px solid var(--card-border);
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.15s ease;
+}
+.cal-nav-btn:hover {
+  background: var(--surface-soft-hover);
+  color: var(--aqua-blue);
+}
+
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-faint);
+  margin-bottom: 8px;
+}
+
+.cal-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 8px;
+  color: var(--ink);
+  cursor: default;
+  transition: background-color 0.15s ease;
+}
+
+.cal-day.other-month {
+  color: var(--ink-faint);
+  opacity: 0.35;
+}
+
+.cal-day.current-month:hover {
+  background: var(--surface-soft-hover);
+  cursor: pointer;
+}
+
+/* ไฮไลท์สีฟ้าตรง "วันนี้" */
+.cal-day.is-today {
+  background: var(--aqua-blue) !important;
+  color: #ffffff !important;
+  font-weight: 800;
+  box-shadow: 0 2px 8px rgba(20, 120, 201, 0.4);
+}
+
+.cal-footer {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--card-border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cal-today-btn {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--aqua-blue);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+.cal-today-btn:hover {
+  text-decoration: underline;
+}
+
+/* ===================== 3D HUD Time & Date ===================== */
+.overlay-time {
+  font-family: 'Sarabun', monospace;
+  font-size: 20px;
+  font-weight: 800;
+  color: #38bdf8;
+  text-align: center;
+  margin-bottom: 2px;
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
+  letter-spacing: 0.05em;
+}
+.overlay-date {
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: center;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+/* ===================== Font Size Selector Dropdown ===================== */
+.font-size-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 165px;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--card-border, #e3edf7);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  padding: 10px;
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .font-size-dropdown {
+  background: #101f36;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.font-size-dropdown.hidden {
+  display: none !important;
+}
+
+.font-size-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-soft, #5b6b82);
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--card-border, #e3edf7);
+  display: flex;
+  align-items: center;
+}
+
+[data-theme="dark"] .font-size-header {
+  color: var(--ink-faint, #71829c);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.font-size-options {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.font-size-btn {
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink, #10233d);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.font-size-btn:hover {
+  background: var(--surface-soft, #f6faff);
+  color: var(--aqua-blue, #1478c9);
+}
+
+.font-size-btn.active {
+  background: var(--aqua-blue, #1478c9) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+/* ===================== Dynamic Font Size Scaling ===================== */
+[data-font-size="small"] {
+  --font-scale: 0.88;
+}
+[data-font-size="normal"] {
+  --font-scale: 1;
+}
+[data-font-size="large"] {
+  --font-scale: 1.14;
+}
+[data-font-size="xlarge"] {
+  --font-scale: 1.28;
+}
+
+/* สเกลขนาดตัวอักษรในแชทและปุ่มเมนู */
+[data-font-size="small"] .chat-body-bg { font-size: 10.5px !important; }
+[data-font-size="normal"] .chat-body-bg { font-size: 12px !important; }
+[data-font-size="large"] .chat-body-bg { font-size: 13.5px !important; }
+[data-font-size="xlarge"] .chat-body-bg { font-size: 15px !important; }
+
+[data-font-size="small"] .line-quickmenu span { font-size: 9px !important; }
+[data-font-size="large"] .line-quickmenu span { font-size: 11px !important; }
+[data-font-size="xlarge"] .line-quickmenu span { font-size: 12px !important; }
+
+[data-font-size="small"] .app-main, [data-font-size="small"] .tw-left-panel { font-size: 0.9em; }
+[data-font-size="large"] .app-main, [data-font-size="large"] .tw-left-panel { font-size: 1.08em; }
+[data-font-size="xlarge"] .app-main, [data-font-size="xlarge"] .tw-left-panel { font-size: 1.2em; }
+
+/* ===================== Collapsible Side Nav ===================== */
+.side-nav {
+  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1), padding 0.3s ease;
+}
+
+/* ปุ่มสำหรับกดพับ/ขยาย Sidebar */
+.sidebar-toggle-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--surface-soft);
+  border: 1px solid var(--card-border);
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+.sidebar-toggle-btn:hover {
+  background: var(--surface-soft-hover);
+  color: var(--aqua-blue);
+}
+
+/* สภาพเมื่อ Sidebar ถูกซ่อน/ย่อ (Collapsed State) */
+.side-nav.collapsed {
+  width: 76px;
+  padding: 20px 10px;
+}
+
+/* ซ่อนข้อความทั้งหมดเมื่อย่อ */
+.side-nav.collapsed .brand-title,
+.side-nav.collapsed .brand-sub,
+.side-nav.collapsed .side-nav-community,
+.side-nav.collapsed .side-nav-item span,
+.side-nav.collapsed .nav-text {
+  display: none !important;
+}
+
+/* ปรับระยะและจัดไอคอนให้อยู่ตรงกลางเมื่อย่อ */
+.side-nav.collapsed .side-nav-brand {
+  justify-content: center;
+  padding: 4px 0 20px 0;
+}
+
+.side-nav.collapsed .side-nav-item {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.side-nav.collapsed .side-nav-item i {
+  margin: 0;
+  font-size: 16px;
+}
+
+/* หมุนไอคอนปุ่มทิศทางเมื่อพับ */
+.side-nav.collapsed .sidebar-toggle-btn i {
+  transform: rotate(180deg);
+}
+
+/* ===================== Custom Sleek Scrollbar ===================== */
+/* กำหนดขนาดแถบ Scrollbar ให้เล็กลงเรียวสวย */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+/* สีพื้นหลังของราง Scrollbar ให้เนียนไปกับพื้นหลังเว็บ */
+::-webkit-scrollbar-track {
+  background: var(--page-bg, #0a1626);
+}
+
+/* ตัวหัวเลื่อน Scrollbar แบบโค้งมน มินิมอล */
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+/* เมื่อนำเมาส์ไปชี้ จะไฮไลท์เป็นสีฟ้า AQUA */
+::-webkit-scrollbar-thumb:hover {
+  background: var(--aqua-blue, #1478c9);
+}
+
+/* ===================== Ambient Background Animation ===================== */
+.ambient-bg-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* แสงฟุ้งออโรราเคลื่อนไหวช้าๆ สบายตา */
+.ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.2;
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+
+[data-theme="dark"] .ambient-glow {
+  opacity: 0.25;
+}
+
+.glow-1 {
+  top: 10%;
+  left: 2%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, #0284c7 0%, transparent 70%);
+  animation: ambientFloat1 20s ease-in-out infinite alternate;
+}
+
+.glow-2 {
+  bottom: 10%;
+  right: 2%;
+  width: 550px;
+  height: 550px;
+  background: radial-gradient(circle, #0d9488 0%, transparent 70%);
+  animation: ambientFloat2 25s ease-in-out infinite alternate;
+}
+
+/* หยดน้ำ/ฟองอากาศลอยเอื่อยๆ */
+.ambient-droplet {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(125, 211, 252, 0.4), rgba(20, 120, 201, 0.05));
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+  animation: floatUp linear infinite;
+  will-change: transform, opacity;
+}
+
+.drop-1 {
+  width: 28px;
+  height: 28px;
+  left: 10%;
+  bottom: -40px;
+  animation-duration: 18s;
+  animation-delay: 0s;
+}
+
+.drop-2 {
+  width: 18px;
+  height: 18px;
+  left: 22%;
+  bottom: -40px;
+  animation-duration: 24s;
+  animation-delay: 5s;
+}
+
+.drop-3 {
+  width: 34px;
+  height: 34px;
+  right: 12%;
+  bottom: -40px;
+  animation-duration: 20s;
+  animation-delay: 2s;
+}
+
+.drop-4 {
+  width: 22px;
+  height: 22px;
+  right: 25%;
+  bottom: -40px;
+  animation-duration: 28s;
+  animation-delay: 8s;
+}
+
+/* Keyframe Animations */
+@keyframes ambientFloat1 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(70px, 50px) scale(1.12); }
+  100% { transform: translate(-40px, 90px) scale(0.92); }
+}
+
+@keyframes ambientFloat2 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-60px, -70px) scale(1.1); }
+  100% { transform: translate(50px, -40px) scale(0.88); }
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) scale(0.8);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.55;
+  }
+  85% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateY(-110vh) scale(1.1);
+    opacity: 0;
+  }
+}
+
+/* กำหนด z-index ของเนื้อหาให้กดปุ่มได้ตามปกติ */
+#page-dashboard section {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===================== Floating Map Critical Alert Button ===================== */
+.floating-alert-btn {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  padding: 12px 18px;
+  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.45), 0 0 20px rgba(225, 29, 72, 0.3);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: floatBounce 2.5s ease-in-out infinite;
+}
+
+.floating-alert-btn.hidden {
+  display: none !important;
+}
+
+.floating-alert-btn:hover {
+  transform: translateY(-4px) scale(1.04);
+  box-shadow: 0 14px 35px rgba(239, 68, 68, 0.6);
+}
+
+.floating-alert-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+  flex-shrink: 0;
+  animation: alertIconPulse 1s ease-in-out infinite alternate;
+}
+
+.floating-alert-content {
+  text-align: left;
+}
+
+.floating-alert-title {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.floating-alert-sub {
+  font-size: 10.5px;
+  opacity: 0.9;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+/* วงแหวนกระจายแสงสีแดงกระพริบ (Ping Effect) */
+.floating-alert-ping {
+  position: absolute;
+  inset: -4px;
+  border-radius: 20px;
+  border: 2px solid #ef4444;
+  animation: alertPing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  pointer-events: none;
+}
+
+/* ไฮไลท์การ์ดแผนที่เมื่อเลื่อนลงมาถึง */
+.map-highlight-pulse {
+  animation: mapPulseGlow 1.8s ease-in-out;
+}
+
+@keyframes alertPing {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+
+@keyframes alertIconPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.18); }
+}
+
+@keyframes floatBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes mapPulseGlow {
+  0%, 100% { box-shadow: var(--card-shadow); }
+  50% { box-shadow: 0 0 35px rgba(239, 68, 68, 0.6), 0 0 0 2px #ef4444; }
+}
+
+
+/* ===================== Custom Confirm Modal Dialog ===================== */
+.custom-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(6, 15, 30, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 1;
+  transition: opacity 0.25s ease;
+}
+
+.custom-modal-backdrop.hidden {
+  display: none !important;
+}
+
+.custom-modal-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--card-bg, #101f36);
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.12));
+  border-radius: 20px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+  animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalPop {
+  0% { transform: scale(0.9) translateY(12px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.custom-modal-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  margin: 0 auto 16px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+.custom-modal-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink, #ffffff);
+  margin-bottom: 8px;
+}
+
+.custom-modal-desc {
+  font-size: 12px;
+  color: var(--ink-soft, #94a3b8);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.custom-modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.custom-modal-btn {
+  flex: 1;
+  height: 42px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.custom-modal-btn.btn-cancel {
+  background: var(--surface-soft, rgba(255, 255, 255, 0.08));
+  color: var(--ink-soft, #94a3b8);
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.12));
+}
+
+.custom-modal-btn.btn-cancel:hover {
+  background: var(--surface-soft-hover, rgba(255, 255, 255, 0.15));
+  color: var(--ink, #ffffff);
+}
+
+.custom-modal-btn.btn-danger {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: #ffffff;
+  border: none;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35);
+}
+
+.custom-modal-btn.btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.5);
+}
+
+/* ===================== Tutorial Guide Modal ===================== */
+.guide-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  background: rgba(6, 15, 30, 0.75);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  transition: opacity 0.3s ease;
+}
+
+.guide-modal-backdrop.hidden {
+  display: none !important;
+}
+
+.guide-modal-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--card-bg, #101f36);
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.12));
+  border-radius: 24px;
+  padding: 28px 24px 22px 24px;
+  position: relative;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.guide-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-soft, rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.12));
+  color: var(--ink-faint, #94a3b8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+.guide-close-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.guide-steps-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.guide-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--track-bg, rgba(255, 255, 255, 0.2));
+  transition: all 0.3s ease;
+}
+.guide-dot.active {
+  width: 24px;
+  background: var(--aqua-blue, #1478c9);
+}
+
+.guide-slide-body {
+  text-align: center;
+  animation: fadeInSlide 0.3s ease;
+}
+
+@keyframes fadeInSlide {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.guide-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--aqua-blue, #38bdf8);
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.guide-icon-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 20px;
+  margin: 0 auto 16px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+}
+
+.guide-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--ink, #ffffff);
+  margin-bottom: 8px;
+}
+
+.guide-desc {
+  font-size: 12.5px;
+  color: var(--ink-soft, #94a3b8);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.guide-bullets {
+  text-align: left;
+  background: var(--surface-soft, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.08));
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.guide-bullets li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ink, #e2e8f0);
+  line-height: 1.5;
+}
+
+.guide-bullets li i {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.guide-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.guide-btn {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+
+.guide-btn.btn-secondary {
+  background: var(--surface-soft, rgba(255, 255, 255, 0.08));
+  color: var(--ink-soft, #94a3b8);
+  border: 1px solid var(--card-border, rgba(255, 255, 255, 0.12));
+}
+.guide-btn.btn-secondary:hover {
+  background: var(--surface-soft-hover, rgba(255, 255, 255, 0.15));
+  color: var(--ink, #ffffff);
+}
+
+.guide-btn.btn-primary {
+  background: linear-gradient(135deg, #0284c7, #1478c9);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
+}
+.guide-btn.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.5);
+}
+
+.guide-btn.btn-success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+.guide-btn.btn-success:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.5);
+}
+
+/* ===================== Sleek Water Sweep Transition ===================== */
+/* ตัวสร้างม่านน้ำปาดสลับหน้า (Liquid Wipe Layer) */
+.water-sweep-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 10005;
+  pointer-events: none;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.water-sweep-wave {
+  position: absolute;
+  inset: -10%;
+  background: linear-gradient(135deg, #0284c7 0%, #06b6d4 50%, #1478c9 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+  opacity: 0.95;
+  box-shadow: 0 0 50px rgba(56, 189, 248, 0.8) inset;
+}
+
+/* แสงฟุ้งประกายน้ำระยิบระยับขณะปาด */
+.water-sweep-sparkle {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 50%, rgba(224, 242, 254, 0.4) 0%, transparent 60%);
+  opacity: 0;
+  transform: scale(0.5);
+  pointer-events: none;
+}
+
+/* แอนิเมชันคลื่นน้ำปาดจากบนลงล่างพร้อมเกลียวคลื่น */
+@keyframes liquidWaveSweepIn {
+  0% {
+    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+  }
+  50% {
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 75% 100%, 45% 80%, 15% 95%, 0 85%);
+  }
+  100% {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes liquidWaveSweepOut {
+  0% {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+  50% {
+    clip-path: polygon(0 85%, 25% 100%, 60% 80%, 85% 95%, 100% 85%, 100% 100%, 0 100%);
+  }
+  100% {
+    clip-path: polygon(0 100%, 100% 100%, 100% 100%, 0 100%);
+  }
+}
+
+/* ปรับปรุง Transition ของ Splash / Loading Screen ให้สอดรับกับเอฟเฟกต์น้ำ */
+.welcome-overlay.water-transition-out {
+  animation: liquidRippleFade 0.8s cubic-bezier(0.77, 0, 0.175, 1) forwards !important;
+}
+
+#threeLoadingScreen.water-transition-out {
+  animation: liquidRippleFade 0.8s cubic-bezier(0.77, 0, 0.175, 1) forwards !important;
+}
+
+@keyframes liquidRippleFade {
+  0% {
+    clip-path: circle(150% at 50% 50%);
+    opacity: 1;
+    filter: blur(0px);
+  }
+  50% {
+    clip-path: circle(60% at 50% 50%);
+    opacity: 0.8;
+    filter: blur(4px);
+  }
+  100% {
+    clip-path: circle(0% at 50% 50%);
+    opacity: 0;
+    filter: blur(12px);
+    visibility: hidden;
+  }
+}
+
+.neon-red {
+    color: #ff2d2d;
+    font-weight: 900;
+    text-shadow:
+        0 0 4px #ff2d2d,
+        0 0 8px #ff2d2d,
+        0 0 16px #ff2d2d,
+        0 0 32px #ff0000,
+        0 0 48px #ff0000;
+}

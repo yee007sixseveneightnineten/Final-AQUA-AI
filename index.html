@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AQUA AI - Interactive Pitch Prototype</title>
+  <!-- Apply saved theme before first paint to avoid a light/dark flash -->
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('aquaTheme');
+        if (savedTheme === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+        // 🔤 อ่านค่าขนาดตัวอักษรที่บันทึกไว้
+        var savedSize = localStorage.getItem('aquaFontSize');
+        if (savedSize) {
+          document.documentElement.setAttribute('data-font-size', savedSize);
+        }
+      } catch (e) { }
+    })();
+  </script>
+  <!-- Tailwind CSS for Beautiful UI without setup -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+  <!-- New Feature #5: Offline-First PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1478c9">
+</head>
+
+<body class="min-h-screen font-sans">
+
+  <!-- Welcome / splash screen — introduces the app once per browser, then fades out on its own (see initWelcomeOverlay in script.js) -->
+  <div id="welcomeOverlay" class="welcome-overlay water-splash-theme">
+
+    <div class="water-splash-container">
+      <div class="splash-drop"></div>
+
+      <div class="splash-ripple ripple-1"></div>
+      <div class="splash-ripple ripple-2"></div>
+      <div class="splash-ripple ripple-3"></div>
+
+      <div class="splash-particles">
+        <span class="p-drop pd-1"></span>
+        <span class="p-drop pd-2"></span>
+        <span class="p-drop pd-3"></span>
+        <span class="p-drop pd-4"></span>
+        <span class="p-drop pd-5"></span>
+        <span class="p-drop pd-6"></span>
+      </div>
+
+      <div class="welcome-logo-box splash-logo">
+        <i class="fa-solid fa-droplet"></i>
+      </div>
+    </div>
+
+    <h1 class="welcome-title splash-text">AQUA AI</h1>
+    <div class="welcome-tagline-badge splash-badge">
+      <i class="fa-solid fa-wand-magic-sparkles mr-1 text-sky-200"></i> Smart Water Management Platform
+    </div>
+
+    <p class="welcome-subtitle">
+      ระบบจัดการน้ำอัจฉริยะเพื่อเกษตรกรไทย ตรวจวัดความชื้นดินและสั่งเปิด-ปิดปั๊มน้ำแบบอัตโนมัติ
+      ช่วยให้แปลงอ้อยและนาข้าวได้น้ำพอดี ประหยัดน้ำ ประหยัดค่าไฟ และเพิ่มผลผลิตอย่างยั่งยืน
+    </p>
+
+    <div class="welcome-progress-group">
+      <div class="welcome-loading-bar">
+        <div class="welcome-loading-fill" id="welcomeLoadingFill"></div>
+      </div>
+      <div class="welcome-loading-info">
+        <span id="welcomeLoadingText">กำลังเชื่อมต่อระบบ AI ดาวเทียม...</span>
+        <span id="welcomePercentText" class="font-mono font-bold text-white">0%</span>
+      </div>
+    </div>
+
+    <div class="bottom-water-wave">
+      <svg viewBox="0 0 2400 120" preserveAspectRatio="none" class="wave-svg wave-layer-1">
+        <path d="M0,40 C300,90 600,10 900,50 C1200,90 1500,10 1800,50 C2100,90 2300,20 2400,40 L2400,120 L0,120 Z"
+          fill="#0077b6" opacity="0.65"></path>
+      </svg>
+      <svg viewBox="0 0 2400 120" preserveAspectRatio="none" class="wave-svg wave-layer-2">
+        <path d="M0,60 C300,10 600,80 900,30 C1200,80 1500,20 1800,70 C2100,20 2300,80 2400,60 L2400,120 L0,120 Z"
+          fill="#03045e" opacity="0.85"></path>
+      </svg>
+    </div>
+  </div>
+
+  <!-- Urgent alerts (e.g. ความชื้นต่ำกว่า 20%) pop in here — see triggerUrgentAlert in script.js -->
+  <div id="urgentToastContainer"></div>
+
+  <!-- New Feature #5: Offline-First PWA — shown when the browser loses connectivity -->
+  <div id="offlineBanner" class="offline-banner">
+    <i class="fa-solid fa-wifi"></i>
+    <span>คุณกำลังออฟไลน์ — แสดงข้อมูลล่าสุดที่บันทึกไว้ในเครื่อง ระบบจะซิงค์กับ Cloud
+      อัตโนมัติเมื่อกลับมาออนไลน์</span>
+  </div>
+
+  <div class="app-shell">
+
+    <!-- Backdrop for the mobile navigation drawer -->
+    <div class="mobile-nav-backdrop" id="mobileNavBackdrop" onclick="closeMobileNav()"></div>
+
+    <!-- ============ Left Sidebar Navigation ============ -->
+    <aside class="side-nav" id="sideNav">
+      <div class="side-nav-brand flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="brand-icon"><i class="fa-solid fa-droplet"></i></div>
+          <div class="brand-text-group">
+            <div class="brand-title">AQUA AI</div>
+            <div class="brand-sub">Smart Water Management</div>
+          </div>
+        </div>
+
+        <button class="sidebar-toggle-btn hidden lg:flex" onclick="toggleSidebar()" title="ซ่อน/ขยายเมนู">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+      </div>
+
+      <a href="#" class="side-nav-item active" data-page="dashboard" onclick="switchPage('dashboard'); return false;">
+        <i class="fa-solid fa-gauge-high"></i> <span class="nav-text">Dashboard</span>
+      </a>
+      <a href="#" class="side-nav-item" data-page="digitaltwin" onclick="switchPage('digitaltwin'); return false;">
+        <i class="fa-solid fa-earth-asia"></i> <span class="nav-text">Digital Twin</span>
+      </a>
+      <a href="#" class="side-nav-item" data-page="allocation" onclick="switchPage('allocation'); return false;">
+        <i class="fa-solid fa-diagram-project"></i> <span class="nav-text">Water Allocation</span>
+      </a>
+      <a href="#" class="side-nav-item" data-page="prediction" onclick="switchPage('prediction'); return false;">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> <span class="nav-text">AI Prediction</span>
+      </a>
+      <a href="#" class="side-nav-item" data-page="iot" onclick="switchPage('iot'); return false;">
+        <i class="fa-solid fa-satellite-dish"></i> <span class="nav-text">IoT Monitoring</span>
+      </a>
+      <a href="#" class="side-nav-item" data-page="farm" onclick="switchPage('farm'); return false;">
+        <i class="fa-solid fa-tractor"></i> <span class="nav-text">Farm Management</span>
+      </a>
+      <a href="#" class="side-nav-item" data-page="reports" onclick="switchPage('reports'); return false;">
+        <i class="fa-solid fa-chart-simple"></i> <span class="nav-text">Reports &amp; Analytics</span>
+      </a>
+      <a href="#" class="side-nav-item" data-page="carbon" onclick="switchPage('carbon'); return false;">
+        <i class="fa-solid fa-leaf"></i> <span class="nav-text">Carbon Credit</span>
+      </a>
+      <a href="#" class="side-nav-item" data-page="roi" onclick="switchPage('roi'); return false;">
+        <i class="fa-solid fa-calculator"></i> <span class="nav-text">ROI Calculator</span>
+      </a>
+      <a href="#" class="side-nav-item" data-page="scheduling" onclick="switchPage('scheduling'); return false;">
+        <i class="fa-solid fa-list-ol"></i> <span class="nav-text">Water Scheduling</span>
+      </a>
+      <a href="#" class="side-nav-item" data-page="alerts" onclick="switchPage('alerts'); return false;">
+        <i class="fa-solid fa-triangle-exclamation"></i> <span class="nav-text">Alerts &amp; Notifications</span>
+      </a>
+      <a href="#" class="side-nav-item" data-page="community" onclick="switchPage('community'); return false;">
+        <i class="fa-solid fa-people-group"></i> <span class="nav-text">Community</span>
+      </a>
+      <a href="#" class="side-nav-item" data-page="settings" onclick="switchPage('settings'); return false;">
+        <i class="fa-solid fa-gear"></i> <span class="nav-text">Settings</span>
+      </a>
+
+      <div class="side-nav-community">
+        <div class="text-[11px] font-bold text-[var(--ink)]">บ้านท่าม่วงเหนือ</div>
+        <div class="text-[10px] text-[var(--ink-faint)] mt-0.5">ตำบลท่าม่วง อำเภอเสลภูมิ<br>จังหวัดร้อยเอ็ด</div>
+      </div>
+    </aside>
+
+    <!-- ============ Main column: topbar + content ============ -->
+    <div class="ambient-bg-container" aria-hidden="true">
+      <div class="ambient-glow glow-1"></div>
+      <div class="ambient-glow glow-2"></div>
+      <div class="ambient-droplet drop-1"></div>
+      <div class="ambient-droplet drop-2"></div>
+      <div class="ambient-droplet drop-3"></div>
+      <div class="ambient-droplet drop-4"></div>
+    </div>
+    <div class="app-main">
+
+      <!-- Top Bar -->
+      <header class="top-bar">
+        <div class="flex items-center gap-2 flex-wrap">
+          <button class="mobile-menu-btn" onclick="toggleMobileNav()" title="เมนู" aria-label="เปิดเมนู">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="relative">
+            <div class="top-pill cursor-pointer hover:border-[var(--aqua-blue)] transition-colors"
+              onclick="toggleCalendarDropdown(event)" title="คลิกเพื่อเปิดดูปฏิทิน">
+              <i class="fa-regular fa-calendar text-[var(--aqua-blue)]"></i>
+              <span class="pill-value" id="topBarDate">กำลังโหลดเวลา...</span>
+              <i class="fa-solid fa-chevron-down text-[9px] text-[var(--ink-faint)] ml-1"></i>
+            </div>
+
+            <div id="calendarDropdown" class="calendar-dropdown hidden" onclick="event.stopPropagation()">
+              <div class="cal-header">
+                <button onclick="changeCalMonth(-1)" class="cal-nav-btn" title="เดือนก่อนหน้า"><i
+                    class="fa-solid fa-chevron-left"></i></button>
+                <span id="calMonthYearTitle" class="cal-title">กรกฎาคม 2569</span>
+                <button onclick="changeCalMonth(1)" class="cal-nav-btn" title="เดือนถัดไป"><i
+                    class="fa-solid fa-chevron-right"></i></button>
+              </div>
+              <div class="cal-weekdays">
+                <span>อา</span><span>จ</span><span>อ</span><span>พ</span><span>พฤ</span><span>ศ</span><span>ส</span>
+              </div>
+              <div class="cal-days-grid" id="calDaysGrid">
+              </div>
+              <div class="cal-footer">
+                <button onclick="resetCalToToday()" class="cal-today-btn">ไปที่วันนี้</button>
+              </div>
+            </div>
+          </div>
+          <div class="top-pill" id="topBarWeather">
+            <i class="fa-solid fa-cloud-sun text-amber-400" id="weatherIcon"></i>
+            <span class="pill-label">พยากรณ์อากาศ</span>
+            <span class="pill-value" id="weatherValue">กำลังโหลด...</span>
+          </div>
+          <div class="top-pill"><i class="fa-solid fa-location-dot text-[var(--aqua-blue)]"></i> <span
+              class="pill-value">ชุมชนบ้านท่าม่วงเหนือ</span> <i
+              class="fa-solid fa-chevron-down text-[9px] text-[var(--ink-faint)]"></i></div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span id="saveIndicator"
+            class="text-[10px] text-[var(--aqua-blue)] flex items-center gap-1 opacity-0 transition-opacity duration-300">
+            <i class="fa-solid fa-cloud-arrow-up saving-indicator"></i> ซิงค์กับ Cloud แล้ว
+          </span>
+          <span class="status-online-badge"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> AI
+            Status Online</span>
+          <button class="theme-toggle-btn" onclick="toggleTheme()" title="สลับธีมมืด/สว่าง">
+            <i class="fa-solid fa-sun icon-sun"></i>
+            <i class="fa-solid fa-moon icon-moon"></i>
+          </button>
+          <div class="relative">
+            <button class="bell-btn" onclick="toggleNotifDropdown(event)" title="การแจ้งเตือน"
+              aria-label="การแจ้งเตือน">
+              <i class="fa-regular fa-bell"></i>
+              <span class="bell-dot" id="bellDot">0</span>
+            </button>
+
+            <div id="notifDropdown" class="notif-dropdown hidden">
+              <div class="notif-header">
+                <span>การแจ้งเตือน</span>
+                <button onclick="markAllNotifsRead()" class="notif-clear-btn">อ่านทั้งหมด</button>
+              </div>
+              <div class="notif-list" id="notifList">
+              </div>
+            </div>
+          </div>
+          <div class="profile-chip">
+            <div
+              class="profile-avatar bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-[11px] font-bold">
+              สจ</div>
+            <div class="hidden sm:block leading-tight">
+              <div class="text-[11.5px] font-bold text-[var(--ink)]">สมชาย ใจดี</div>
+              <div class="text-[9.5px] text-[var(--ink-faint)]">ผู้ดูแลระบบ</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Sweeps across on every SPA page switch as a clear "something changed" cue -->
+      <div class="page-load-bar" id="pageLoadBar"><span></span></div>
+
+      <!-- ============ PAGE: Dashboard ============ -->
+      <main class="page-view page-visible max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6"
+        id="page-dashboard" data-page="dashboard">
+
+        <!-- LEFT COLUMN: LINE OA SIMULATOR (The Key End-User Interface) -->
+        <section class="lg:col-span-4 flex flex-col">
+          <div class="mb-2 flex items-center justify-between">
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-[var(--ink-soft)]"><i
+                class="fa-brands fa-line text-emerald-500 mr-2"></i>1. End-User Interface (LINE OA)</h2>
+            <span class="text-[10px] text-[var(--ink-faint)]">ช่วยลด Tech Adoption Barrier</span>
+          </div>
+
+          <!-- Contact Switcher -->
+          <div class="flex gap-2 mb-3 max-w-[360px] mx-auto w-full">
+            <button id="chip-plot1" onclick="switchContact('plot1')"
+              class="contact-chip flex-1 aqua-card rounded-xl px-2 py-2 text-center">
+              <div
+                class="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-xs font-bold mb-1">
+                ลส</div>
+              <div class="text-[10px] font-medium text-[var(--ink)]">ลุงสมชาย</div>
+            </button>
+            <button id="chip-plot2" onclick="switchContact('plot2')"
+              class="contact-chip flex-1 aqua-card rounded-xl px-2 py-2 text-center">
+              <div
+                class="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-cyan-400 to-sky-600 flex items-center justify-center text-white text-xs font-bold mb-1">
+                นศ</div>
+              <div class="text-[10px] font-medium text-[var(--ink)]">น้าสมศรี</div>
+            </button>
+            <button id="chip-plot3" onclick="switchContact('plot3')"
+              class="contact-chip flex-1 aqua-card rounded-xl px-2 py-2 text-center">
+              <div
+                class="w-8 h-8 mx-auto rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-xs font-bold mb-1">
+                ผด</div>
+              <div class="text-[10px] font-medium text-[var(--ink)]">ผู้ใหญ่ผู้ดี</div>
+            </button>
+          </div>
+
+          <!-- Phone Frame Mockup -->
+          <div class="phone-frame w-full max-w-[360px] mx-auto overflow-hidden flex flex-col h-[640px] relative">
+            <!-- Phone Notch -->
+            <div class="phone-notch-bar absolute top-0 inset-x-0 h-4 flex justify-center items-center z-20">
+              <div class="w-24 h-3 rounded-b-xl" style="background: var(--phone-bg);"></div>
+            </div>
+
+            <!-- LINE Header -->
+            <div class="line-header pt-6 pb-3 px-4 flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-chevron-left text-sm text-[var(--ink-faint)]"></i>
+                <div
+                  class="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center font-bold text-xs text-white shadow">
+                  <i class="fa-solid fa-droplet"></i>
+                </div>
+                <div>
+                  <div id="chatHeaderName" class="text-xs font-bold flex items-center text-[var(--ink)]">AQUA AI <i
+                      class="fa-solid fa-circle-check text-emerald-500 text-[10px] ml-1"></i></div>
+                  <div id="chatHeaderSub" class="text-[9px] text-emerald-600">● ปกติ</div>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-3 text-sm text-[var(--ink-faint)] relative">
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <button onclick="toggleFontSizeDropdown(event)" title="ปรับขนาดตัวอักษร"
+                  class="hover:text-[var(--aqua-blue)] transition-colors focus:outline-none">
+                  <i class="fa-solid fa-bars cursor-pointer"></i>
+                </button>
+
+                <div id="fontSizeDropdown" class="font-size-dropdown hidden" onclick="event.stopPropagation()">
+                  <div class="font-size-header">
+                    <i class="fa-solid fa-text-height mr-1.5 text-[var(--aqua-blue)]"></i> ขนาดตัวอักษร
+                  </div>
+                  <div class="font-size-options">
+                    <button onclick="setFontSize('small')" class="font-size-btn" data-size="small">เล็ก (85%)</button>
+                    <button onclick="setFontSize('normal')" class="font-size-btn active" data-size="normal">ปกติ
+                      (100%)</button>
+                    <button onclick="setFontSize('large')" class="font-size-btn" data-size="large">ใหญ่ (115%)</button>
+                    <button onclick="setFontSize('xlarge')" class="font-size-btn" data-size="xlarge">ใหญ่มาก
+                      (130%)</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- LINE Chat Body -->
+            <div class="chat-body-bg flex-1 p-3 overflow-y-auto space-y-3 text-xs" id="lineChatContainer">
+              <!-- Messages rendered by script.js -->
+            </div>
+
+            <!-- LINE Rich Menu Mockup (Interactive Buttons) -->
+            <div class="line-quickmenu p-2 grid grid-cols-3 gap-1">
+              <button onclick="simulateLineAction('moisture')"
+                class="line-quickmenu-btn active:scale-95 p-2.5 rounded-lg flex flex-col items-center justify-center text-center">
+                <i class="fa-solid fa-droplet text-sky-500 mb-1 text-base"></i>
+                <span class="text-[10px] font-medium">ตรวจความชื้นดิน</span>
+              </button>
+              <button onclick="simulateLineAction('irrigation')"
+                class="line-quickmenu-btn active:scale-95 p-2.5 rounded-lg flex flex-col items-center justify-center text-center">
+                <i class="fa-solid fa-robot text-cyan-600 mb-1 text-base"></i>
+                <span class="text-[10px] font-medium">AI แนะนำการให้น้ำ</span>
+              </button>
+              <button onclick="simulateLineAction('toggle_pump')"
+                class="line-quickmenu-btn pump-btn active:scale-95 p-2.5 rounded-lg flex flex-col items-center justify-center text-center">
+                <i class="fa-solid fa-power-off mb-1 text-base" id="linePumpIcon"></i>
+                <span class="text-[10px] font-bold" id="linePumpText">สั่งเปิด/ปิดปั๊ม</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Irrigation traffic-light status (mirrors the field indicator system) -->
+          <div class="aqua-card rounded-xl p-4 mt-4 max-w-[360px] mx-auto w-full">
+            <h3 class="card-heading flex items-center gap-2 mb-3"><i
+                class="fa-solid fa-traffic-light text-[var(--aqua-blue)]"></i> ระบบไฟจราจรสำหรับเกษตรกร</h3>
+            <div class="space-y-2">
+              <div class="traffic-row traffic-green"><span class="traffic-dot"></span>
+                <div>
+                  <div>เขียว</div>
+                  <div class="traffic-sub">พร้อมให้น้ำ</div>
+                </div>
+              </div>
+              <div class="traffic-row traffic-yellow"><span class="traffic-dot"></span>
+                <div>
+                  <div>เหลือง</div>
+                  <div class="traffic-sub">เฝ้าระวัง</div>
+                </div>
+              </div>
+              <div class="traffic-row traffic-red"><span class="traffic-dot"></span>
+                <div>
+                  <div>แดง</div>
+                  <div class="traffic-sub">หยุดให้น้ำ</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT COLUMN: CENTRALIZED CORPORATE DASHBOARD (The Business Solution) -->
+        <section class="lg:col-span-8 flex flex-col space-y-6">
+
+          <div onclick="scrollToTopDashboard()" class="cursor-pointer group select-none">
+            <h2
+              class="text-sm font-semibold uppercase tracking-wider text-[var(--ink-soft)] group-hover:text-[var(--aqua-blue)] transition-colors flex items-center">
+              <i class="fa-solid fa-chart-line text-[var(--aqua-blue)] mr-2"></i>2. Centralized Corporate Dashboard
+              <i class="fa-solid fa-arrow-up text-xs ml-2 opacity-0 group-hover:opacity-100 transition-opacity text-[var(--aqua-blue)]"
+                title="กลับขึ้นบนสุด"></i>
+            </h2>
+            <p class="text-[11px] text-[var(--ink-faint)]">สำหรับโรงงานน้ำตาล / อบต. / สหกรณ์ บริหารเครือข่ายแปลงเกษตรกร
+              (คลิกเพื่อกลับขึ้นบนสุด)</p>
+          </div>
+
+          <!-- Key Financial Metrics (Impact Evidence) -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="aqua-card metric-card p-4 rounded-xl">
+              <span class="metric-num">1</span>
+              <div class="metric-icon-circle bg-sky-50 text-sky-600"><i class="fa-solid fa-droplet"></i></div>
+              <p class="text-[11px] text-[var(--ink-faint)] font-medium">รวมปริมาณน้ำที่ประหยัดได้</p>
+              <p class="text-2xl font-bold text-[var(--aqua-blue)] mt-1" id="metricWater">34.2%</p>
+              <span class="text-[10px] text-emerald-600"><i class="fa-solid fa-caret-up"></i> Target: 20-40%</span>
+            </div>
+            <div class="aqua-card metric-card p-4 rounded-xl">
+              <span class="metric-num">2</span>
+              <div class="metric-icon-circle bg-cyan-50 text-cyan-600"><i class="fa-solid fa-bolt"></i></div>
+              <p class="text-[11px] text-[var(--ink-faint)] font-medium">ลดต้นทุนพลังงาน (ค่าไฟ/น้ำมัน)</p>
+              <p class="text-2xl font-bold text-cyan-600 mt-1" id="metricEnergy">28.5%</p>
+              <span class="text-[10px] text-emerald-600"><i class="fa-solid fa-caret-up"></i> Target: 15-30%</span>
+            </div>
+            <div class="aqua-card metric-card p-4 rounded-xl">
+              <span class="metric-num">3</span>
+              <div class="metric-icon-circle bg-emerald-50 text-emerald-600"><i class="fa-solid fa-seedling"></i></div>
+              <p class="text-[11px] text-[var(--ink-faint)] font-medium">คาดการณ์ Yield สุทธิเพิ่มขึ้น</p>
+              <p class="text-2xl font-bold text-emerald-600 mt-1">+14.8%</p>
+              <span class="text-[10px] text-[var(--ink-faint)]">จากช่วงเวลาให้น้ำที่ดีที่สุด</span>
+            </div>
+            <div class="aqua-card metric-card p-4 rounded-xl">
+              <span class="metric-num">4</span>
+              <div class="metric-icon-circle bg-indigo-50 text-indigo-600"><i class="fa-solid fa-map-location-dot"></i>
+              </div>
+              <p class="text-[11px] text-[var(--ink-faint)] font-medium">แปลงเกษตรกรในระบบ</p>
+              <p class="text-2xl font-bold text-indigo-600 mt-1">1,480 แปลง</p>
+              <span class="text-[10px] text-indigo-500">สเกลโดยดาวเทียม (No CapEx)</span>
+            </div>
+          </div>
+
+          <!-- Real-time Multi-area Plot Tracking Table -->
+          <div class="aqua-card rounded-xl overflow-hidden">
+            <div
+              class="px-5 py-4 border-b border-[var(--card-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 class="card-heading flex items-center gap-2">
+                <i class="fa-solid fa-satellite text-[var(--aqua-blue)]"></i>
+                บัญชีรายชื่อแปลงและสถานะความชื้นรายพิกัดดาวเทียม
+              </h3>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-[var(--ink-faint)]">คลิกแถวเพื่อเปิดแชทของเกษตรกร</span>
+                <div
+                  class="text-[11px] surface-soft px-2.5 py-1 rounded border border-[var(--card-border)] text-[var(--ink-soft)]">
+                  อัปเดตข้อมูลล่าสุด: <span class="text-[var(--aqua-blue)] font-semibold">เรียลไทม์</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr
+                    class="surface-soft text-[var(--ink-faint)] font-medium uppercase border-b border-[var(--card-border)]">
+                    <th class="p-4">รหัสแปลง / เกษตรกร</th>
+                    <th class="p-4">พิกัด / พืชที่ปลูก</th>
+                    <th class="p-4">ความชื้นดินปัจจุบัน (Satellite Index)</th>
+                    <th class="p-4">สถานะปั๊มน้ำหน้างาน</th>
+                    <th class="p-4 text-right">คำแนะนำจาก AI</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--card-border)]" id="dashboardTableBody">
+                  <!-- Plot 1 -->
+                  <tr id="row-plot1" class="farmer-row row-hover transition" onclick="switchContact('plot1')">
+                    <td class="p-4">
+                      <div class="font-semibold text-[var(--ink)]">Plot-001 (ลุงสมชาย)</div>
+                      <div class="text-[10px] text-[var(--ink-faint)]">กลุ่มสัญญาน้ำตาลโซน A</div>
+                    </td>
+                    <td class="p-4">
+                      <div>อ้อยคั้นน้ำ</div>
+                      <div class="text-[10px] text-[var(--ink-faint)]">14.9642° N, 102.0931° E</div>
+                    </td>
+                    <td class="p-4">
+                      <div class="flex items-center space-x-2">
+                        <div class="w-24 track-bg h-2 rounded-full overflow-hidden">
+                          <div class="bg-gradient-to-r from-sky-400 to-blue-500 h-full transition-all duration-500"
+                            id="plot1MoistureBar" style="width: 32%;"></div>
+                        </div>
+                        <span id="plot1MoistureText" class="font-medium text-[var(--ink-soft)]">32% (ต่ำ)</span>
+                      </div>
+                    </td>
+                    <td class="p-4">
+                      <span id="plot1PumpBadge"
+                        class="badge-idle text-[var(--ink-soft)] px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> ปิดอยู่
+                      </span>
+                    </td>
+                    <td class="p-4 text-right">
+                      <span id="plot1AIAdvice"
+                        class="text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded font-medium">เปิดน้ำ
+                        3.1 คิว (ลึกประมาณ 9 ซม.)</span>
+                    </td>
+                  </tr>
+                  <!-- Plot 2 -->
+                  <tr id="row-plot2" class="farmer-row row-hover transition" onclick="switchContact('plot2')">
+                    <td class="p-4">
+                      <div class="font-semibold text-[var(--ink)]">Plot-002 (น้าสมศรี)</div>
+                      <div class="text-[10px] text-[var(--ink-faint)]">กลุ่มสัญญาน้ำตาลโซน A</div>
+                    </td>
+                    <td class="p-4">
+                      <div>อ้อยโรงงาน</div>
+                      <div class="text-[10px] text-[var(--ink-faint)]">14.9688° N, 102.0954° E</div>
+                    </td>
+                    <td class="p-4">
+                      <div class="flex items-center space-x-2">
+                        <div class="w-24 track-bg h-2 rounded-full overflow-hidden">
+                          <div class="bg-gradient-to-r from-emerald-400 to-teal-500 h-full transition-all duration-500"
+                            id="plot2MoistureBar" style="width: 58%;"></div>
+                        </div>
+                        <span id="plot2MoistureText" class="font-medium text-emerald-600">58% (พอดี)</span>
+                      </div>
+                    </td>
+                    <td class="p-4">
+                      <span id="plot2PumpBadge"
+                        class="badge-idle text-[var(--ink-soft)] px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> ปิดอยู่
+                      </span>
+                    </td>
+                    <td class="p-4 text-right">
+                      <span id="plot2AIAdvice"
+                        class="text-[var(--ink-faint)] badge-idle px-2 py-1 rounded font-medium">ความชื้นพอดี
+                        งดให้น้ำ</span>
+                    </td>
+                  </tr>
+                  <!-- Plot 3 -->
+                  <tr id="row-plot3" class="farmer-row row-hover transition" onclick="switchContact('plot3')">
+                    <td class="p-4">
+                      <div class="font-semibold text-[var(--ink)]">Plot-003 (ผู้ใหญ่ผู้ดี)</div>
+                      <div class="text-[10px] text-[var(--ink-faint)]">กลุ่มนาแปลงใหญ่ ม.4</div>
+                    </td>
+                    <td class="p-4">
+                      <div>ข้าวหอมมะลิ</div>
+                      <div class="text-[10px] text-[var(--ink-faint)]">15.1245° N, 101.8942° E</div>
+                    </td>
+                    <td class="p-4">
+                      <div class="flex items-center space-x-2">
+                        <div class="w-24 track-bg h-2 rounded-full overflow-hidden">
+                          <div class="bg-gradient-to-r from-blue-400 to-indigo-500 h-full transition-all duration-500"
+                            id="plot3MoistureBar" style="width: 75%;"></div>
+                        </div>
+                        <span id="plot3MoistureText" class="font-medium text-blue-600">75% (น้ำขัง)</span>
+                      </div>
+                    </td>
+                    <td class="p-4">
+                      <span id="plot3PumpBadge"
+                        class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full font-medium inline-flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> กำลังเปิดระบาย
+                      </span>
+                    </td>
+                    <td class="p-4 text-right">
+                      <span id="plot3AIAdvice"
+                        class="text-blue-700 bg-blue-50 border border-blue-200 px-2 py-1 rounded font-medium">น้ำเพียงพอ
+                        ระบายออกตามกาล</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <button id="floatingMapAlertBtn" onclick="scrollToInteractiveMap()" class="floating-alert-btn hidden"
+            title="คลิกเพื่อดูแผนที่แปลงวิกฤต">
+            <span class="floating-alert-ping"></span>
+            <div class="floating-alert-icon">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="floating-alert-content">
+              <div class="floating-alert-title">เตือนภัย! ความชื้นวิกฤต</div>
+              <div class="floating-alert-sub" id="floatingAlertSubText">
+                คลิกเพื่อไปยังแผนที่ <i id="floatingAlertArrow" class="fa-solid fa-arrow-down ml-1"></i>
+              </div>
+            </div>
+          </button>
+
+          <!-- Interactive Satellite Map -->
+          <div class="aqua-card rounded-xl overflow-hidden" id="interactiveMapCard">
+            <div
+              class="px-5 py-4 border-b border-[var(--card-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 class="card-heading flex items-center gap-2">
+                <i class="fa-solid fa-map-location-dot text-[var(--aqua-blue)]"></i> แผนที่ภาพรวมพื้นที่ (Interactive
+                Map)
+              </h3>
+              <span class="text-[10px] text-[var(--ink-faint)]">คลิกจุดบนแผนที่เพื่อเปิดแชทของเกษตรกร</span>
+            </div>
+
+            <div class="map-canvas" style="height: 380px;" id="mapCanvas">
+
+              <div class="map-viewport" id="mapViewport">
+
+                <!-- Aerial terrain + field polygons -->
+                <svg class="map-terrain" viewBox="0 0 800 460" preserveAspectRatio="xMidYMid slice"
+                  xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="terrainBase" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#1f4a2b" />
+                      <stop offset="45%" stop-color="#173a24" />
+                      <stop offset="100%" stop-color="#0f2a1a" />
+                    </linearGradient>
+                    <filter id="grain">
+                      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5" stitchTiles="stitch"
+                        result="noise" />
+                      <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.06 0" />
+                    </filter>
+                  </defs>
+                  <rect width="800" height="460" fill="url(#terrainBase)" />
+                  <rect width="800" height="460" filter="url(#grain)" />
+
+                  <path id="zone-plot1" class="field-zone cursor-pointer"
+                    d="M15,40 L305,15 L330,180 L235,260 L95,275 L10,190 Z" onclick="switchContact('plot1', true)" />
+                  <path id="zone-plot2" class="field-zone cursor-pointer"
+                    d="M320,10 L620,35 L610,165 L470,215 L345,180 Z" onclick="switchContact('plot2', true)" />
+                  <path id="zone-plot3" class="field-zone cursor-pointer"
+                    d="M110,290 L250,275 L350,195 L485,230 L625,180 L790,215 L770,420 L150,445 Z"
+                    onclick="switchContact('plot3', true)" />
+                </svg>
+
+                <div class="map-pin" id="pin-plot1" style="top:33%; left:20%;" onclick="switchContact('plot1', true)">
+                  <i class="fa-solid fa-droplet" id="pin-icon-plot1"></i>
+                  <span class="map-pin-label">Plot-001 · ลุงสมชาย</span>
+                </div>
+                <div class="map-pin" id="pin-plot2" style="top:23%; left:59%;" onclick="switchContact('plot2', true)">
+                  <i class="fa-solid fa-droplet" id="pin-icon-plot2"></i>
+                  <span class="map-pin-label">Plot-002 · น้าสมศรี</span>
+                </div>
+                <div class="map-pin" id="pin-plot3" style="top:73%; left:52%;" onclick="switchContact('plot3', true)">
+                  <i class="fa-solid fa-droplet" id="pin-icon-plot3"></i>
+                  <span class="map-pin-label">Plot-003 · ผู้ใหญ่ผู้ดี</span>
+                </div>
+
+              </div>
+
+              <!-- Zoom / Locate / Layers controls -->
+              <div class="map-controls">
+                <div class="map-control-btn" title="Zoom in" onclick="mapZoomIn()"><i class="fa-solid fa-plus"></i>
+                </div>
+                <div class="map-control-btn" title="Zoom out" onclick="mapZoomOut()"><i class="fa-solid fa-minus"></i>
+                </div>
+                <div class="map-control-btn" title="รีเซ็ตมุมมอง" onclick="mapLocate()"><i
+                    class="fa-solid fa-location-crosshairs"></i></div>
+                <div class="map-control-btn" title="สลับเลเยอร์แผนที่" onclick="mapToggleLayer()"><i
+                    class="fa-solid fa-layer-group"></i></div>
+              </div>
+
+              <!-- Soil moisture legend -->
+              <div class="map-legend">
+                <div class="map-legend-title">Soil Moisture</div>
+                <div class="map-legend-row"><span class="map-legend-dot moisture-wet"></span> ชื้นมาก</div>
+                <div class="map-legend-row"><span class="map-legend-dot moisture-normal"></span> ปกติ</div>
+                <div class="map-legend-row"><span class="map-legend-dot moisture-dry"></span> แห้ง</div>
+                <div class="map-legend-row"><span class="map-legend-dot moisture-critical"></span> แห้งมาก</div>
+              </div>
+
+              <!-- Low moisture alert banner -->
+              <div class="map-alert-banner" id="mapAlertBanner" style="display: none;">
+                <i class="fa-solid fa-triangle-exclamation text-rose-300 mt-0.5"></i>
+                <div><strong>ALERT:</strong> <span id="mapAlertText"></span></div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Pitch Value Note -->
+          <div class="aqua-card rounded-xl p-4 flex gap-3">
+            <i class="fa-solid fa-droplet text-[var(--aqua-blue)] text-lg mt-0.5"></i>
+            <div class="text-xs text-[var(--ink-soft)] space-y-1">
+              <p class="font-bold text-[var(--ink)]">💡 ข้อมูลประกอบการคุยกับกรรมการในรอบ Pitch (Evidence-based Dynamic
+                Simulation):</p>
+              <p>เมื่อกดสั่งงานผ่าน LINE ระบบจะอัปเดตข้อมูลระดับความชื้นในแดชบอร์ดส่วนกลางแบบเรียลไทม์ทันที
+                สะท้อนโครงสร้างการทำงานแบบ <strong>Centralized Data Hub</strong> ที่ช่วยให้โรงงานควบคุม Supply chain
+                น้ำในแปลงพันธสัญญา (Contract Farming) ได้อย่างสมบูรณ์แบบโดยไม่ต้องติดตั้ง Sensor
+                ทุกจุดให้เปลืองงบประมาณ<br><br>ระบบยังจดจำสถานะการสนทนาและความชื้นของแต่ละแปลงไว้ในเบราว์เซอร์
+                (บันทึกอัตโนมัติ) แม้ปิดหน้าเว็บแล้วเปิดใหม่ก็ยังเห็นข้อมูลล่าสุด</p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- ============ PAGE: Digital Twin ============ -->
+      <div class="page-view max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6" id="page-digitaltwin"
+        data-page="digitaltwin">
+        <div class="flex items-center gap-3">
+          <div class="page-header-icon"><i class="fa-solid fa-earth-asia"></i></div>
+          <div>
+            <h2 class="text-base font-bold text-[var(--ink)]">Digital Twin ของชุมชน</h2>
+            <p class="text-[11px] text-[var(--ink-faint)]">มุมมองจำลองแปลงเกษตรกรแบบเรียลไทม์ เชื่อมข้อมูลชุดเดียวกับ
+              Dashboard</p>
+          </div>
+        </div>
+        <div
+          class="aqua-card rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <div class="page-header-icon" style="background: linear-gradient(135deg,#0284c7,#0d9488);"><i
+                class="fa-solid fa-cube"></i></div>
+            <div>
+              <div class="font-bold text-sm text-[var(--ink)]">มุมมอง 3 มิติแบบเต็มจอ (3D Farm Simulation)</div>
+              <div class="text-[11px] text-[var(--ink-faint)]">เปิดฟาร์มจำลอง 3D พร้อมแชท LINE OA ชุดเดียวกัน —
+                เชื่อมข้อมูลเรียลไทม์กับ Dashboard</div>
+            </div>
+          </div>
+          <button class="text-xs font-semibold text-white px-4 py-2.5 rounded-lg flex-shrink-0 whitespace-nowrap"
+            style="background: var(--aqua-blue);" onclick="window.location.href = '3d.html?plot=' + state.activePlot">
+            เปิดมุมมอง 3D <i class="fa-solid fa-arrow-right ml-1"></i>
+          </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="dtGrid"></div>
+        <div class="aqua-card rounded-xl p-4 flex gap-3">
+          <i class="fa-solid fa-circle-info text-[var(--aqua-blue)] mt-0.5"></i>
+          <p class="text-xs text-[var(--ink-soft)]">วงแหวนแสดงเปอร์เซ็นต์ความชื้นดินเทียบกับค่าเป้าหมายของแต่ละแปลง
+            อัปเดตพร้อมกับหน้า Dashboard และแชท LINE โดยอัตโนมัติ — คลิกการ์ดเพื่อสลับไปดูแปลงนั้นในหน้าอื่น ๆ</p>
+        </div>
+      </div>
+
+      <!-- ============ PAGE: Water Allocation ============ -->
+      <div class="page-view max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6" id="page-allocation" data-page="allocation">
+        <div class="flex items-center gap-3">
+          <div class="page-header-icon"><i class="fa-solid fa-diagram-project"></i></div>
+          <div>
+            <h2 class="text-base font-bold text-[var(--ink)]">การจัดสรรน้ำรายแปลง (Water Allocation Engine)</h2>
+            <p class="text-[11px] text-[var(--ink-faint)]">
+              คำนวณโควตาน้ำวันนี้จากระดับความชื้นปัจจุบันเทียบกับเป้าหมายของแต่ละแปลง</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div class="aqua-card rounded-xl p-4">
+            <p class="text-[11px] text-[var(--ink-faint)] font-medium">โควตาน้ำรวมวันนี้</p>
+            <p class="text-2xl font-bold text-[var(--aqua-blue)] mt-1" id="waTotalQuota">5,400 ลิตร</p>
+            <span class="text-[10px] text-emerald-600"><i class="fa-solid fa-caret-up"></i> จัดสรรแล้ว 100%</span>
+          </div>
+          <div class="aqua-card rounded-xl p-4">
+            <p class="text-[11px] text-[var(--ink-faint)] font-medium">พยากรณ์ฝนพรุ่งนี้</p>
+            <p class="text-2xl font-bold text-cyan-600 mt-1">80%</p>
+            <span class="text-[10px] text-[var(--ink-faint)]">ระบบจะลดโควตาอัตโนมัติหากฝนตกหนัก</span>
+          </div>
+          <div class="aqua-card rounded-xl p-4">
+            <p class="text-[11px] text-[var(--ink-faint)] font-medium">ความเชื่อมั่นของ AI</p>
+            <p class="text-2xl font-bold text-emerald-600 mt-1">96%</p>
+            <span class="text-[10px] text-[var(--ink-faint)]">Confidence จากโมเดลพยากรณ์ล่าสุด</span>
+          </div>
+        </div>
+        <div class="aqua-card rounded-xl p-5">
+          <h3 class="card-heading flex items-center gap-2 mb-4"><i
+              class="fa-solid fa-chart-simple text-[var(--aqua-blue)]"></i> โควตาน้ำที่แนะนำ เทียบรายแปลง</h3>
+          <div id="waList"></div>
+        </div>
+      </div>
+
+      <!-- ============ PAGE: AI Prediction ============ -->
+      <div class="page-view max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6" id="page-prediction" data-page="prediction">
+        <div class="flex items-center gap-3">
+          <div class="page-header-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+          <div>
+            <h2 class="text-base font-bold text-[var(--ink)]">AI Prediction</h2>
+            <p class="text-[11px] text-[var(--ink-faint)]">คำแนะนำการให้น้ำและคาดการณ์ผลผลิตต่อแปลง
+              สร้างจากข้อมูลความชื้นชุดเดียวกับ Dashboard</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="aiPredGrid"></div>
+      </div>
+
+      <!-- ============ PAGE: IoT Monitoring ============ -->
+      <div class="page-view max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6" id="page-iot" data-page="iot">
+        <div class="flex items-center gap-3">
+          <div class="page-header-icon"><i class="fa-solid fa-satellite-dish"></i></div>
+          <div>
+            <h2 class="text-base font-bold text-[var(--ink)]">IoT Monitoring</h2>
+            <p class="text-[11px] text-[var(--ink-faint)]">สถานะอุปกรณ์ภาคสนามและค่าที่อ่านได้ล่าสุดจากเซนเซอร์แต่ละแปลง
+            </p>
+          </div>
+        </div>
+        <div class="aqua-card rounded-xl p-5">
+          <h3 class="card-heading mb-4">สถานะอุปกรณ์ในระบบ</h3>
+          <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-3">
+            <div class="iot-chip"><i class="fa-solid fa-microchip"></i><span class="iot-name">ESP32</span><span
+                class="iot-status">Online</span></div>
+            <div class="iot-chip"><i class="fa-solid fa-tower-broadcast"></i><span class="iot-name">LoRaWAN</span><span
+                class="iot-status">Connected</span></div>
+            <div class="iot-chip"><i class="fa-solid fa-droplet"></i><span class="iot-name">Soil Sensor</span><span
+                class="iot-status">Online</span></div>
+            <div class="iot-chip"><i class="fa-solid fa-water"></i><span class="iot-name">Water Level</span><span
+                class="iot-status">Online</span></div>
+            <div class="iot-chip"><i class="fa-solid fa-faucet"></i><span class="iot-name">Valve Controller</span><span
+                class="iot-status">Online</span></div>
+            <div class="iot-chip"><i class="fa-solid fa-battery-three-quarters"></i><span
+                class="iot-name">Battery</span><span class="iot-status">92%</span></div>
+            <div class="iot-chip"><i class="fa-solid fa-signal"></i><span class="iot-name">Signal</span><span
+                class="iot-status">Excellent</span></div>
+          </div>
+        </div>
+        <div class="aqua-card rounded-xl overflow-hidden">
+          <div class="px-5 py-4 border-b border-[var(--card-border)]">
+            <h3 class="card-heading">ค่าที่อ่านได้ล่าสุดรายแปลง</h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr
+                  class="surface-soft text-[var(--ink-faint)] font-medium uppercase border-b border-[var(--card-border)]">
+                  <th class="p-4">แปลง</th>
+                  <th class="p-4">ความชื้นดิน</th>
+                  <th class="p-4">แบตเตอรี่เซนเซอร์</th>
+                  <th class="p-4">สัญญาณ</th>
+                  <th class="p-4 text-right">อัปเดตล่าสุด</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--card-border)]" id="iotTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Fix #1: Hybrid Sensing Model -->
+        <div class="aqua-card rounded-xl p-4 flex gap-3">
+          <i class="fa-solid fa-satellite text-[var(--aqua-blue)] mt-0.5"></i>
+          <div class="text-xs text-[var(--ink-soft)]">
+            <p class="font-bold text-[var(--ink)] mb-1">Hybrid Sensing Model</p>
+            <p>ระบบวิเคราะห์ความชื้นภาพรวม <strong>90%</strong> ด้วยข้อมูลดาวเทียม (No CapEx
+              ไม่ต้องติดตั้งเซนเซอร์ทุกแปลง) ผสานกับ <strong>IoT Sensor ภาคพื้นดิน 10%</strong> ที่ติดตั้ง ณ
+              จุดอ้างอิงของชุมชน เพื่อใช้ Calibration ค่าดาวเทียมให้แม่นยำยิ่งขึ้นอย่างต่อเนื่อง</p>
+          </div>
+        </div>
+
+        <!-- New Feature #3: Hardware Failure & Anomaly Detection -->
+        <div class="aqua-card rounded-xl p-5">
+          <h3 class="card-heading flex items-center gap-2 mb-1"><i
+              class="fa-solid fa-radar text-[var(--aqua-blue)]"></i> ตรวจจับความผิดปกติของฮาร์ดแวร์ (AI Anomaly
+            Detection)</h3>
+          <p class="card-subtext mb-4">เปรียบเทียบคำสั่งที่ส่งไปกับพฤติกรรมของเซนเซอร์จริง
+            เพื่อจับสัญญาณน้ำรั่ว/ปั๊มไหม้ก่อนเกิดความเสียหาย</p>
+          <div class="space-y-2.5" id="anomalyList"></div>
+        </div>
+
+        <!-- New Feature #6: Predictive Maintenance -->
+        <div class="aqua-card rounded-xl p-5">
+          <h3 class="card-heading flex items-center gap-2 mb-1"><i
+              class="fa-solid fa-screwdriver-wrench text-[var(--aqua-blue)]"></i> แจ้งเตือนบำรุงรักษาล่วงหน้า
+            (Predictive Maintenance)</h3>
+          <p class="card-subtext mb-4">คาดการณ์แนวโน้มแบตเตอรี่/สัญญาณจากข้อมูลย้อนหลัง
+            เพื่อวางแผนซ่อมบำรุงก่อนอุปกรณ์ดับ</p>
+          <div class="space-y-2.5" id="maintenanceList"></div>
+        </div>
+      </div>
+
+      <!-- ============ PAGE: Farm Management ============ -->
+      <div class="page-view max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6" id="page-farm" data-page="farm">
+        <div class="flex items-center gap-3">
+          <div class="page-header-icon"><i class="fa-solid fa-tractor"></i></div>
+          <div>
+            <h2 class="text-base font-bold text-[var(--ink)]">Farm Management</h2>
+            <p class="text-[11px] text-[var(--ink-faint)]">ข้อมูลโปรไฟล์แปลงเกษตรกรทั้งหมดในเครือข่าย</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="farmGrid"></div>
+      </div>
+
+      <!-- ============ PAGE: Reports & Analytics ============ -->
+      <div class="page-view max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6" id="page-reports" data-page="reports">
+        <div class="flex items-center gap-3">
+          <div class="page-header-icon"><i class="fa-solid fa-chart-simple"></i></div>
+          <div>
+            <h2 class="text-base font-bold text-[var(--ink)]">Reports &amp; Analytics</h2>
+            <p class="text-[11px] text-[var(--ink-faint)]">สรุปผลลัพธ์การประหยัดน้ำและเปรียบเทียบความชื้นระหว่างแปลง</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="aqua-card rounded-xl p-4">
+            <div class="metric-icon-circle bg-sky-50 text-sky-600"><i class="fa-solid fa-droplet"></i></div>
+            <p class="text-[11px] text-[var(--ink-faint)] font-medium">น้ำที่ประหยัดได้</p>
+            <p class="text-xl font-bold text-[var(--aqua-blue)] mt-1" id="repWater">34.2%</p>
+          </div>
+          <div class="aqua-card rounded-xl p-4">
+            <div class="metric-icon-circle bg-cyan-50 text-cyan-600"><i class="fa-solid fa-bolt"></i></div>
+            <p class="text-[11px] text-[var(--ink-faint)] font-medium">ลดต้นทุนพลังงาน</p>
+            <p class="text-xl font-bold text-cyan-600 mt-1" id="repEnergy">28.5%</p>
+          </div>
+          <div class="aqua-card rounded-xl p-4">
+            <div class="metric-icon-circle bg-emerald-50 text-emerald-600"><i class="fa-solid fa-seedling"></i></div>
+            <p class="text-[11px] text-[var(--ink-faint)] font-medium">Yield คาดการณ์เพิ่มขึ้น</p>
+            <p class="text-xl font-bold text-emerald-600 mt-1">+14.8%</p>
+          </div>
+          <div class="aqua-card rounded-xl p-4">
+            <div class="metric-icon-circle bg-indigo-50 text-indigo-600"><i class="fa-solid fa-map-location-dot"></i>
+            </div>
+            <p class="text-[11px] text-[var(--ink-faint)] font-medium">แปลงในระบบ</p>
+            <p class="text-xl font-bold text-indigo-600 mt-1">1,480</p>
+          </div>
+        </div>
+        <div class="aqua-card rounded-xl p-5">
+          <h3 class="card-heading flex items-center gap-2 mb-4"><i
+              class="fa-solid fa-scale-balanced text-[var(--aqua-blue)]"></i>
+            เปรียบเทียบความชื้นดินปัจจุบันเทียบเป้าหมาย</h3>
+          <div id="reportsBars"></div>
+        </div>
+      </div>
+
+      <!-- ============ PAGE: Carbon Credit Tracking ============ -->
+      <div class="page-view max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6" id="page-carbon" data-page="carbon">
+        <div class="flex items-center gap-3">
+          <div class="page-header-icon"><i class="fa-solid fa-leaf"></i></div>
+          <div>
+            <h2 class="text-base font-bold text-[var(--ink)]">Carbon Credit Tracking (Scope 3)</h2>
+            <p class="text-[11px] text-[var(--ink-faint)]">แปลงปริมาณน้ำมัน/ไฟฟ้าที่ประหยัดได้จากปั๊มสูบน้ำ
+              เป็นปริมาณก๊าซเรือนกระจกที่ลดได้ สำหรับรายงาน ESG</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="aqua-card rounded-xl p-4">
+            <div class="metric-icon-circle bg-amber-50 text-amber-600"><i class="fa-solid fa-gas-pump"></i></div>
+            <p class="text-[11px] text-[var(--ink-faint)] font-medium">ดีเซลประหยัดได้/เดือน</p>
+            <p class="text-xl font-bold text-amber-600 mt-1" id="carbonDiesel">–</p>
+          </div>
+          <div class="aqua-card rounded-xl p-4">
+            <div class="metric-icon-circle bg-cyan-50 text-cyan-600"><i class="fa-solid fa-bolt"></i></div>
+            <p class="text-[11px] text-[var(--ink-faint)] font-medium">ไฟฟ้าประหยัดได้/เดือน</p>
+            <p class="text-xl font-bold text-cyan-600 mt-1" id="carbonElectric">–</p>
+          </div>
+          <div class="aqua-card rounded-xl p-4">
+            <div class="metric-icon-circle bg-emerald-50 text-emerald-600"><i class="fa-solid fa-cloud"></i></div>
+            <p class="text-[11px] text-[var(--ink-faint)] font-medium">CO2e ลดได้/เดือน</p>
+            <p class="text-xl font-bold text-emerald-600 mt-1" id="carbonCO2e">–</p>
+          </div>
+          <div class="aqua-card rounded-xl p-4">
+            <div class="metric-icon-circle bg-indigo-50 text-indigo-600"><i class="fa-solid fa-tree"></i></div>
+            <p class="text-[11px] text-[var(--ink-faint)] font-medium">เทียบเท่าปลูกต้นไม้</p>
+            <p class="text-xl font-bold text-indigo-600 mt-1" id="carbonTrees">–</p>
+          </div>
+        </div>
+        <div class="aqua-card rounded-xl p-5">
+          <h3 class="card-heading flex items-center gap-2 mb-4"><i
+              class="fa-solid fa-chart-simple text-[var(--aqua-blue)]"></i> สัดส่วนการลด CO2e เทียบรายแปลง</h3>
+          <div id="carbonBars"></div>
+        </div>
+        <div class="aqua-card rounded-xl p-4 flex gap-3">
+          <i class="fa-solid fa-circle-info text-[var(--aqua-blue)] mt-0.5"></i>
+          <p class="text-xs text-[var(--ink-soft)]">คำนวณจากปริมาณน้ำที่ประหยัดได้
+            เทียบอัตราการใช้น้ำมันดีเซล/ไฟฟ้าของปั๊มสูบน้ำมาตรฐาน แล้วแปลงเป็น CO2e
+            ด้วยค่าสัมประสิทธิ์การปล่อยก๊าซเรือนกระจกมาตรฐาน (ตัวเลขประมาณการสำหรับสาธิต)</p>
+        </div>
+      </div>
+
+      <!-- ============ PAGE: ROI Calculator ============ -->
+      <div class="page-view max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6" id="page-roi" data-page="roi">
+        <div class="flex items-center gap-3">
+          <div class="page-header-icon"><i class="fa-solid fa-calculator"></i></div>
+          <div>
+            <h2 class="text-base font-bold text-[var(--ink)]">Corporate ROI Calculator</h2>
+            <p class="text-[11px] text-[var(--ink-faint)]">คำนวณความคุ้มค่าเป็นตัวเงินให้โรงงาน/องค์กร
+              เทียบมูลค่าผลผลิตที่เพิ่มขึ้นกับค่าซอฟต์แวร์</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div class="aqua-card rounded-xl p-5">
+            <h3 class="card-heading mb-4">ตัวแปรคำนวณ</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="text-[11px] font-medium text-[var(--ink-soft)]">จำนวนแปลงในเครือข่าย</label>
+                <input type="number" id="roiPlots" value="1480" min="1" oninput="calcROI()"
+                  class="w-full mt-1 px-3 py-2 rounded-lg text-sm surface-soft border border-[var(--card-border)] text-[var(--ink)]">
+              </div>
+              <div>
+                <label class="text-[11px] font-medium text-[var(--ink-soft)]">ค่าซอฟต์แวร์ต่อแปลง (บาท/ปี)</label>
+                <input type="number" id="roiCostPerPlot" value="450" min="0" oninput="calcROI()"
+                  class="w-full mt-1 px-3 py-2 rounded-lg text-sm surface-soft border border-[var(--card-border)] text-[var(--ink)]">
+              </div>
+              <div>
+                <label class="text-[11px] font-medium text-[var(--ink-soft)]">มูลค่าผลผลิตที่เพิ่มขึ้นต่อแปลง
+                  (บาท/ปี)</label>
+                <input type="number" id="roiValuePerPlot" value="2100" min="0" oninput="calcROI()"
+                  class="w-full mt-1 px-3 py-2 rounded-lg text-sm surface-soft border border-[var(--card-border)] text-[var(--ink)]">
+              </div>
+            </div>
+          </div>
+          <div class="aqua-card rounded-xl p-5">
+            <h3 class="card-heading mb-4">ผลลัพธ์</h3>
+            <div class="space-y-3">
+              <div class="flex items-center justify-between text-[12.5px]"><span
+                  class="text-[var(--ink-faint)]">ค่าซอฟต์แวร์รวม/ปี</span><span class="font-bold text-[var(--ink)]"
+                  id="roiOutCost">–</span></div>
+              <div class="flex items-center justify-between text-[12.5px]"><span
+                  class="text-[var(--ink-faint)]">มูลค่าผลผลิตที่เพิ่มขึ้นรวม/ปี</span><span
+                  class="font-bold text-[var(--ink)]" id="roiOutValue">–</span></div>
+              <div class="flex items-center justify-between text-[12.5px]"><span
+                  class="text-[var(--ink-faint)]">ผลตอบแทนสุทธิ/ปี</span><span class="font-bold text-emerald-600"
+                  id="roiOutNet">–</span></div>
+              <div class="h-px bg-[var(--card-border)] my-2"></div>
+              <div class="flex items-center justify-between"><span
+                  class="text-[13px] font-semibold text-[var(--ink)]">ROI</span><span
+                  class="text-2xl font-bold text-[var(--aqua-blue)]" id="roiOutPct">–</span></div>
+              <div class="flex items-center justify-between"><span
+                  class="text-[13px] font-semibold text-[var(--ink)]">ระยะเวลาคืนทุน</span><span
+                  class="text-lg font-bold text-cyan-600" id="roiOutPayback">–</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ PAGE: Water Scheduling & Queue Engine ============ -->
+      <div class="page-view max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6" id="page-scheduling" data-page="scheduling">
+        <div class="flex items-center gap-3">
+          <div class="page-header-icon"><i class="fa-solid fa-list-ol"></i></div>
+          <div>
+            <h2 class="text-base font-bold text-[var(--ink)]">Water Scheduling &amp; Queue Engine</h2>
+            <p class="text-[11px] text-[var(--ink-faint)]">จัดคิวการเปิดปั๊มสูบน้ำจากแหล่งน้ำสาธารณะ เพื่อป้องกันไฟตก
+              หม้อแปลงระเบิด หรือน้ำหมดคลอง</p>
+          </div>
+        </div>
+        <div class="aqua-card rounded-xl overflow-hidden">
+          <div class="px-5 py-4 border-b border-[var(--card-border)]">
+            <h3 class="card-heading">คิวสูบน้ำที่แนะนำวันนี้ <span
+                class="font-normal text-[var(--ink-faint)] text-[10.5px]">(เรียงจากแปลงที่ความชื้นต่ำสุดก่อน)</span>
+            </h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr
+                  class="surface-soft text-[var(--ink-faint)] font-medium uppercase border-b border-[var(--card-border)]">
+                  <th class="p-4">ลำดับคิว</th>
+                  <th class="p-4">แปลง</th>
+                  <th class="p-4">ช่วงเวลาสูบน้ำ</th>
+                  <th class="p-4">เหตุผลที่ได้คิวนี้</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-[var(--card-border)]" id="schedulingTable"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="aqua-card rounded-xl p-4 flex gap-3">
+          <i class="fa-solid fa-circle-info text-[var(--aqua-blue)] mt-0.5"></i>
+          <p class="text-xs text-[var(--ink-soft)]">ระบบจัดคิวสูบน้ำอัตโนมัติแบ่งช่วงเวลาไม่ให้ปั๊มทุกแปลงเปิดพร้อมกัน
+            ป้องกันปัญหาไฟตก หม้อแปลงชุมชนรับโหลดเกิน หรือน้ำในคลองส่งไม่พอต่อความต้องการพร้อมกันหลายจุด</p>
+        </div>
+      </div>
+
+      <!-- ============ PAGE: Alerts & Notifications ============ -->
+      <div class="page-view max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6" id="page-alerts" data-page="alerts">
+        <div class="flex items-center gap-3">
+          <div class="page-header-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div>
+            <h2 class="text-base font-bold text-[var(--ink)]">Alerts &amp; Notifications</h2>
+            <p class="text-[11px] text-[var(--ink-faint)]">รายการแจ้งเตือนที่สร้างจากสถานะความชื้นและระบบล่าสุด</p>
+          </div>
+        </div>
+        <div class="aqua-card rounded-xl p-5 space-y-3" id="alertsList"></div>
+      </div>
+
+      <!-- ============ PAGE: Community ============ -->
+      <div class="page-view max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6" id="page-community" data-page="community">
+        <div class="flex items-center gap-3">
+          <div class="page-header-icon"><i class="fa-solid fa-people-group"></i></div>
+          <div>
+            <h2 class="text-base font-bold text-[var(--ink)]">Community</h2>
+            <p class="text-[11px] text-[var(--ink-faint)]">สมาชิกเกษตรกรในชุมชนบ้านท่าม่วงเหนือ
+              และคะแนนความเป็นธรรมในการจัดสรรน้ำ</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="communityGrid"></div>
+      </div>
+
+      <!-- ============ PAGE: Settings ============ -->
+      <div class="page-view max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6" id="page-settings" data-page="settings">
+        <div class="flex items-center gap-3">
+          <div class="page-header-icon"><i class="fa-solid fa-gear"></i></div>
+          <div>
+            <h2 class="text-base font-bold text-[var(--ink)]">Settings</h2>
+            <p class="text-[11px] text-[var(--ink-faint)]">ตั้งค่ารูปแบบการแสดงผลและการแจ้งเตือนของระบบ</p>
+          </div>
+        </div>
+
+        <div class="pref-row">
+          <div>
+            <div class="pref-title text-rose-600">ล้างประวัติการสนทนา (LINE OA)</div>
+            <div class="pref-sub">ลบข้อความแชทสะสมทั้งหมด และรีเซ็ตกลับเป็นข้อความต้อนรับเริ่มต้น</div>
+          </div>
+          <button onclick="clearChatHistory()"
+            class="text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 px-3.5 py-1.5 rounded-lg transition-colors flex-shrink-0 cursor-pointer">
+            <i class="fa-solid fa-trash-can mr-1"></i> ล้างประวัติ
+          </button>
+        </div>
+
+        <div class="pref-row">
+          <div>
+            <div class="pref-title neon-red">
+              ล้างข้อมูลแคช (Clear Cache & Reset)
+            </div>
+            <div class="pref-sub">ลบข้อมูลแคชในเครื่อง, LocalStorage และรีเซ็ตสถานะการตั้งค่าทั้งหมดของแอป</div>
+          </div>
+          <button onclick="clearAppCache()"
+            class="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100 px-3.5 py-1.5 rounded-lg transition-colors flex-shrink-0 cursor-pointer">
+            <i class="fa-solid fa-broom mr-1"></i> ล้างแคช
+          </button>
+        </div>
+
+        <div class="pref-row">
+          <div>
+            <div class="pref-title">คู่มือการใช้งานระบบ (Tutorial Guide)</div>
+            <div class="pref-sub">เปิดดูขั้นตอนและวิธีการใช้งานฟีเจอร์หลักต่างๆ ของระบบ AQUA AI</div>
+          </div>
+
+          <button onclick="openGuideModal(1)"
+            class="text-xs font-semibold text-[var(--aqua-blue)] bg-sky-50 border border-sky-200 hover:bg-sky-100 px-3.5 py-1.5 rounded-lg transition-colors flex-shrink-0 cursor-pointer">
+            <i class="fa-solid fa-book-open mr-1"></i> เปิดคู่มือ
+          </button>
+        </div>
+        <div class="aqua-card rounded-xl p-5 max-w-xl">
+          <h3 class="card-heading mb-2">การแสดงผล</h3>
+
+          <div class="pref-row">
+            <div>
+              <div class="pref-title">โหมดกลางคืน (Dark Mode)</div>
+              <div class="pref-sub">สลับโทนสีเข้ม/สว่างของทั้งระบบ และจดจำค่าไว้ในเบราว์เซอร์</div>
+            </div>
+            <div class="pref-switch" id="settingsThemeSwitch" onclick="toggleTheme()"></div>
+          </div>
+
+          <div class="pref-row">
+            <div>
+              <div class="pref-title">เอฟเฟกต์ม่านน้ำสลับหน้า (Page Transition)</div>
+              <div class="pref-sub">เปิด/ปิดแอนิเมชันคลื่นน้ำปาดสลับหน้าจอและสลับเข้ามุมมอง 3D</div>
+            </div>
+            <div class="pref-switch on" id="settingsTransitionSwitch" onclick="togglePageTransition()"></div>
+          </div>
+
+          <div class="pref-row">
+            <div>
+              <div class="pref-title">แสดงสัตว์เลี้ยงในฉาก 3D</div>
+              <div class="pref-sub">เปิด/ปิดวัวและสัตว์เดินเล่นรอบแปลงเกษตรในหน้า 3D Digital Twin</div>
+            </div>
+            <div class="pref-switch" id="settingsAnimalsSwitch" onclick="toggleAnimals()"></div>
+          </div>
+          <h3 class="card-heading mb-2 mt-5">การแจ้งเตือน</h3>
+
+          <div class="pref-row">
+            <div>
+              <div class="pref-title">เปิดวาล์วอัตโนมัติเมื่อความชื้นต่ำวิกฤต (< 10%)</div>
+                  <div class="pref-sub">สั่งเปิดปั๊มน้ำเข้าแปลงให้อัตโนมัติทันทีเมื่อความชื้นดินต่ำกว่า 10%
+                    (ป้องกันพืชแห้งตาย)</div>
+              </div>
+              <div class="pref-switch" id="autoOpenValveSwitch" onclick="toggleAutoOpenValve()"></div>
+            </div>
+
+            <div class="pref-row">
+              <div>
+                <div class="pref-title">แจ้งเตือนความชื้นต่ำกว่าเกณฑ์</div>
+                <div class="pref-sub">ส่งแจ้งเตือนเมื่อแปลงใดต่ำกว่าค่าเป้าหมาย</div>
+              </div>
+              <div class="pref-switch on" onclick="this.classList.toggle('on')"></div>
+            </div>
+
+            <div class="pref-row">
+              <div>
+                <div class="pref-title">แจ้งเตือนพยากรณ์ฝน</div>
+                <div class="pref-sub">แจ้งเมื่อโอกาสฝนตกสูงกว่า 70%</div>
+              </div>
+              <div class="pref-switch on" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="pref-row">
+              <div>
+                <div class="pref-title">สรุปผลรายสัปดาห์ทาง LINE</div>
+                <div class="pref-sub">ส่งสรุปการใช้น้ำให้เกษตรกรทุกวันจันทร์ 08:00 น.</div>
+              </div>
+              <div class="pref-switch on" id="weeklyReportSwitch" onclick="this.classList.toggle('on')"></div>
+            </div>
+            <div class="surface-soft rounded-lg p-3 mt-3">
+              <p class="text-[10.5px] font-semibold text-[var(--ink-faint)] mb-2 uppercase tracking-wide">
+                ตัวอย่างข้อความที่จะส่งอัตโนมัติ</p>
+              <div class="flex items-start space-x-2">
+                <div
+                  class="w-6 h-6 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white font-bold text-[9px] flex-shrink-0 shadow">
+                  AQ</div>
+                <div class="bubble-bot p-2.5 rounded-2xl rounded-tl-none shadow-sm text-[11.5px] leading-relaxed"
+                  id="weeklyReportPreview">กำลังสร้างตัวอย่างสรุป...</div>
+              </div>
+            </div>
+            <button class="mt-5 text-xs font-semibold text-white px-4 py-2 rounded-lg"
+              style="background: var(--aqua-blue);" onclick="showSavingIndicator()">บันทึกการตั้งค่า</button>
+          </div>
+
+          <!-- Fix #3: Cloud database status (mock — data is still saved to the browser for this demo) -->
+          <div class="aqua-card rounded-xl p-5 max-w-xl">
+            <h3 class="card-heading mb-3 flex items-center gap-2"><i
+                class="fa-solid fa-cloud text-[var(--aqua-blue)]"></i> การเชื่อมต่อฐานข้อมูล</h3>
+            <div class="pref-row">
+              <div>
+                <div class="pref-title">Cloud Database (PostGIS)</div>
+                <div class="pref-sub">โหมดสาธิต Pitch Prototype — ข้อมูลจำลองยังเก็บในเบราว์เซอร์ของผู้ใช้
+                  (localStorage)
+                  เมื่อขึ้น Production จะซิงค์กับ Cloud จริง</div>
+              </div>
+              <span class="text-[10px] font-bold text-emerald-600 flex items-center gap-1.5 flex-shrink-0"><span
+                  class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Synced</span>
+            </div>
+            <div class="pref-row">
+              <div>
+                <div class="pref-title">โหมดออฟไลน์ (Offline-First PWA)</div>
+                <div class="pref-sub">ติดตั้งเป็นแอปและใช้งานข้อมูลล่าสุดได้แม้ไม่มีสัญญาณอินเทอร์เน็ต
+                  แล้วซิงค์อัตโนมัติเมื่อกลับมาออนไลน์</div>
+              </div>
+              <span id="offlineStatusBadge"
+                class="text-[10px] font-bold text-emerald-600 flex items-center gap-1.5 flex-shrink-0"><span
+                  class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>Online</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Interactive Logic -->
+    <script src="script.js"></script>
+    <div id="customConfirmModal" class="custom-modal-backdrop hidden" onclick="closeConfirmModal(false)">
+      <div class="custom-modal-card" onclick="event.stopPropagation()">
+        <div class="custom-modal-icon bg-rose-500/10 text-rose-500 border border-rose-500/20">
+          <i class="fa-solid fa-trash-can"></i>
+        </div>
+        <h3 class="custom-modal-title">ยืนยันการล้างประวัติแชท?</h3>
+        <p class="custom-modal-desc">
+          ข้อความแชท LINE OA ทั้งหมดของทุกแปลงจะถูกรีเซ็ตกลับเป็นข้อความต้อนรับเริ่มต้น และไม่สามารถเรียกคืนได้
+        </p>
+        <div class="custom-modal-actions">
+          <button onclick="closeConfirmModal(false)" class="custom-modal-btn btn-cancel">
+            ยกเลิก
+          </button>
+          <button onclick="closeConfirmModal(true)" class="custom-modal-btn btn-danger">
+            <i class="fa-solid fa-trash-can mr-1.5"></i> ล้างประวัติ
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="guideModal" class="guide-modal-backdrop hidden" onclick="closeGuideModal()">
+      <div class="guide-modal-card" onclick="event.stopPropagation()">
+        <button class="guide-close-btn" onclick="closeGuideModal()" title="ปิด">✕</button>
+
+        <div class="guide-steps-indicator" id="guideStepDots">
+          <span class="guide-dot active"></span>
+          <span class="guide-dot"></span>
+          <span class="guide-dot"></span>
+          <span class="guide-dot"></span>
+        </div>
+
+        <div id="guideContent"></div>
+
+        <div class="guide-footer">
+          <button type="button" onclick="dontShowGuideToday()"
+            class="text-[11px] text-[var(--ink-faint)] hover:text-[var(--aqua-blue)] transition-colors underline cursor-pointer flex items-center gap-1">
+            <i class="fa-regular fa-calendar-xmark"></i> ไม่แสดงอีกในวันนี้
+          </button>
+
+          <button id="guidePrevBtn" onclick="prevGuideStep()" class="guide-btn btn-secondary hidden ml-auto">
+            <i class="fa-solid fa-chevron-left mr-1"></i> ย้อนกลับ
+          </button>
+          <button id="guideNextBtn" onclick="nextGuideStep()" class="guide-btn btn-primary ml-auto">
+            ถัดไป <i class="fa-solid fa-chevron-right ml-1"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="customClearCacheModal" class="custom-modal-backdrop hidden" onclick="closeClearCacheModal(false)">
+      <div class="custom-modal-card" onclick="event.stopPropagation()">
+        <div class="custom-modal-icon bg-rose-500/20 text-rose-500 border border-rose-500/30 animate-pulse">
+          <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+        </div>
+        <h3 class="custom-modal-title text-rose-500">⚠️ ยืนยันการล้างแคชและรีเซ็ตระบบ?</h3>
+        <p class="custom-modal-desc text-slate-300">
+          <span class="block text-rose-400 font-bold mb-1">🚨 คำเตือนสำคัญ!</span>
+          การดำเนินการนี้จะ <strong class="text-rose-400 underline">ลบข้อมูลการตั้งค่า ประวัติแชท
+            และข้อมูลแคชทั้งหมดในเครื่อง</strong><br>
+          ข้อมูลทั้งหมดจะถูกรีเซ็ตและ<strong class="text-white">ไม่สามารถกู้คืนได้</strong> คุณแน่ใจหรือไม่ที่จะทำต่อ?
+        </p>
+        <div class="custom-modal-actions">
+          <button onclick="closeClearCacheModal(false)" class="custom-modal-btn btn-cancel">
+            ยกเลิก
+          </button>
+          <button onclick="closeClearCacheModal(true)" class="custom-modal-btn btn-danger">
+            <i class="fa-solid fa-broom mr-1.5"></i> แน่ใจ, ล้างข้อมูลเลย
+          </button>
+        </div>
+      </div>
+    </div>
+</body>
+
+</html>
